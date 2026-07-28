@@ -8,7 +8,7 @@
 	<name>@MODULE_NAME@</name>
 	<version>@MODULE_VERSION@</version>
 	<package>@MODULE_PACKAGE@</package>
-	<author>Chuyen Nguyen</author>
+	<author>Ghanshyam,Ambika</author>
 	<description>
 			Inventory module
 	</description>
@@ -20,7 +20,7 @@
 	<!-- <updateURL>https://dev.openmrs.org/modules/download/@MODULE_ID@/update.rdf</updateURL> -->
 	<!-- /Base Module Properties -->
 	
-	<require_version>1.6.1</require_version>
+	<require_version>1.9.10</require_version>
 	
 	<!-- Extensions -->
 	<extension>

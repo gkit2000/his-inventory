@@ -28,6 +28,7 @@
 		<th>Batch no</th>
 		<th title="Quantity available">Qty available</th>
 		<th title="Issue quantity">Issue qty</th>
+		<th>Discount %</th>
 	</tr>
 	<c:choose>
 	<c:when test="${not empty listReceiptDrug}">
@@ -40,6 +41,8 @@
 		<td>${avaiable.batchNo }</td>
 		<td>${avaiable.currentQuantity}</td>
 		<td><em>*</em><input type="text" id="${avaiable.id }" ${!varStatus.first ? 'value=0' : ''} onchange="INVENTORY.checkValueExt(this, '${avaiable.currentQuantity}');" name="${avaiable.id }" class="required digits" size="5"/></td>
+		<td><input type="text" id="discount_${avaiable.id}" name="discount_${avaiable.id}" value="0" class="digits" size="3"/>
+        </td>
 		</tr>
 	</c:forEach>
 	

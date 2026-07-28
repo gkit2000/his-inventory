@@ -2,18 +2,25 @@ package org.openmrs.module.inventory.web.controller.global;
 
 import java.math.BigDecimal;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
+import org.openmrs.Concept;
+import org.openmrs.ConceptAnswer;
 import org.openmrs.Patient;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
 import org.openmrs.Role;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.hospitalcore.HospitalCoreService;
 import org.openmrs.module.hospitalcore.InventoryCommonService;
 import org.openmrs.module.hospitalcore.model.InventoryDrug;
 import org.openmrs.module.hospitalcore.model.InventoryDrugCategory;
@@ -25,6 +32,7 @@ import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatientDetail;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransaction;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransactionDetail;
 import org.openmrs.module.hospitalcore.util.ActionValue;
+import org.openmrs.module.hospitalcore.util.GlobalPropertyUtil;
 import org.openmrs.module.inventory.InventoryService;
 import org.openmrs.module.inventory.model.InventoryItem;
 import org.openmrs.module.inventory.model.InventoryItemSpecification;
@@ -421,7 +429,13 @@ public class AjaxController {
 	}
 	
 	@RequestMapping("/module/inventory/processIssueDrug.form")
-	public String processIssueDrug( @RequestParam(value="action",required=false)  Integer action,Model model) {
+	public String processIssueDrug( @RequestParam(value="action",required=false)  Integer action,Model model,HttpServletRequest request,
+			@RequestParam(value = "totalValue", required = false) Float totalValue,
+			@RequestParam(value = "waiverPercentage", required = false) Float waiverPercentage,
+            @RequestParam(value= "waiverComment", required = false) String waiverComment,
+			@RequestParam(value = "totalAmountPayable", required = false) BigDecimal totalAmountPayable,
+			@RequestParam(value = "amountGiven", required = false) Integer amountGiven,
+			@RequestParam(value = "amountReturned", required = false) Integer amountReturned) {
 		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
 		int userId = Context.getAuthenticatedUser().getId();
 		String fowardParam = "issueDrugDetail_"+userId;
@@ -429,10 +443,15 @@ public class AjaxController {
 		if(action == 1){
 			StoreSingleton.getInstance().getHash().remove(fowardParam);
 			StoreSingleton.getInstance().getHash().remove("issueDrug_"+userId);
+			System.out.println("aaaaaaaaa");
 			return "redirect:/module/inventory/subStoreIssueDrugForm.form";
 		}
 		List<InventoryStoreDrugPatientDetail> list = (List<InventoryStoreDrugPatientDetail> )StoreSingleton.getInstance().getHash().get(fowardParam);
 		InventoryStoreDrugPatient issueDrugPatient = (InventoryStoreDrugPatient )StoreSingleton.getInstance().getHash().get("issueDrug_"+userId);
+		
+		HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
+		List<PersonAttribute> pas = hcs.getPersonAttributes(issueDrugPatient.getPatient().getPatientId());
+		
 		if(issueDrugPatient != null && list != null && list.size() > 0){
 			
 			Date date = new Date();
@@ -445,9 +464,24 @@ public class AjaxController {
 			 transaction.setCreatedBy(Context.getAuthenticatedUser().getGivenName());
 			 transaction = inventoryService.saveStoreDrugTransaction(transaction);
 			 
-			 
+			 String patientCategory = "";
+			 String patientSubcategory = "";
+		       for (PersonAttribute pa : pas) {
+		            PersonAttributeType attributeType = pa.getAttributeType();
+		            if(pa.getAttributeType().getId()==14)
+		            {
+		            	patientCategory = pa.getValue();
+		            	issueDrugPatient.setPatientCategoryf(patientCategory);
+		            }
+		            if(pa.getAttributeType().getId()==31)
+		            {
+		            	patientSubcategory = pa.getValue();
+		            	issueDrugPatient.setPatientSubcategoryf(patientSubcategory);
+		            }
+		       }
 			
 			issueDrugPatient = inventoryService.saveStoreDrugPatient(issueDrugPatient);
+			
 			for(InventoryStoreDrugPatientDetail pDetail : list){
 				Date date1 = new Date();
 				try {
@@ -471,7 +505,8 @@ public class AjaxController {
 				transDetail.setClosingBalance(t);
 				transDetail.setQuantity(0);
 				transDetail.setVAT(pDetail.getTransactionDetail().getVAT());
-				transDetail.setUnitPrice(pDetail.getTransactionDetail().getUnitPrice());
+				transDetail.setCostToPatient(drugTransactionDetail.getMrpPrice());
+				transDetail.setMrpPrice(pDetail.getTransactionDetail().getMrpPrice());
 				transDetail.setDrug(pDetail.getTransactionDetail().getDrug());
 				transDetail.setFormulation(pDetail.getTransactionDetail().getFormulation());
 				transDetail.setBatchNo(pDetail.getTransactionDetail().getBatchNo());
@@ -492,9 +527,24 @@ public class AjaxController {
 				totl = totl.plus(totl.times((double)pDetail.getTransactionDetail().getVAT()/100));
 				transDetail.setTotalPrice(totl.getAmount());*/
 				
-				BigDecimal moneyUnitPrice = pDetail.getTransactionDetail().getUnitPrice().multiply(new BigDecimal(pDetail.getQuantity()));
-				moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(pDetail.getTransactionDetail().getVAT().divide(new BigDecimal(100))));
+				BigDecimal moneyUnitPrice = pDetail.getTransactionDetail().getMrpPrice().multiply(new BigDecimal(pDetail.getQuantity()));
+				//moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(pDetail.getTransactionDetail().getVAT().divide(new BigDecimal(100))));
 				transDetail.setTotalPrice(moneyUnitPrice);
+				
+				transDetail.setTotalAmount(totalValue);
+				transDetail.setWaiverPercentage(waiverPercentage);
+				Float waiverAmount=totalValue*waiverPercentage/100;
+				transDetail.setWaiverAmount(waiverAmount);
+				transDetail.setAmountPayable(totalAmountPayable);
+				//credit amount set
+				if (amountGiven==null)
+				{
+				transDetail.setAmountCredit(totalAmountPayable);
+				}
+		
+				transDetail.setComments(waiverComment);
+				transDetail.setAmountGiven(amountGiven);
+				transDetail.setAmountReturned(amountReturned);
 				
 				transDetail.setParent(pDetail.getTransactionDetail());
 				transDetail = inventoryService.saveStoreDrugTransactionDetail(transDetail);
@@ -523,16 +573,16 @@ public class AjaxController {
 		if(action == 1){
 			StoreSingleton.getInstance().getHash().remove(fowardParam);
 			StoreSingleton.getInstance().getHash().remove("issueDrugAccount_"+userId);
+			StoreSingleton.getInstance().getHash().remove("transaction_"+userId);
 			return "redirect:/module/inventory/subStoreIssueDrugAccountForm.form";
 		}
 		List<InventoryStoreDrugAccountDetail> list = (List<InventoryStoreDrugAccountDetail> )StoreSingleton.getInstance().getHash().get(fowardParam);
 		InventoryStoreDrugAccount issueDrugAccount = (InventoryStoreDrugAccount )StoreSingleton.getInstance().getHash().get("issueDrugAccount_"+userId);
+		InventoryStoreDrugTransaction transaction = (InventoryStoreDrugTransaction )StoreSingleton.getInstance().getHash().get("transaction_"+userId);
 		if(issueDrugAccount != null && list != null && list.size() > 0){
 			
 			Date date = new Date();
-			//create transaction issue from substore
-			 InventoryStoreDrugTransaction transaction = new InventoryStoreDrugTransaction();
-			 transaction.setDescription("ISSUE DRUG TO ACCOUNT "+DateUtils.getDDMMYYYY());
+
 			 transaction.setStore(store);
 			 transaction.setTypeTransaction(ActionValue.TRANSACTION[1]);
 			 transaction.setCreatedOn(date);
@@ -567,7 +617,7 @@ public class AjaxController {
 				transDetail.setClosingBalance(t);
 				transDetail.setQuantity(0);
 				transDetail.setVAT(pDetail.getTransactionDetail().getVAT());
-				transDetail.setUnitPrice(pDetail.getTransactionDetail().getUnitPrice());
+				transDetail.setMrpPrice(pDetail.getTransactionDetail().getMrpPrice());
 				transDetail.setDrug(pDetail.getTransactionDetail().getDrug());
 				transDetail.setFormulation(pDetail.getTransactionDetail().getFormulation());
 				transDetail.setBatchNo(pDetail.getTransactionDetail().getBatchNo());
@@ -587,7 +637,8 @@ public class AjaxController {
 				
 				totl = totl.plus(totl.times((double)pDetail.getTransactionDetail().getVAT()/100));
 				transDetail.setTotalPrice(totl.getAmount());*/
-				BigDecimal moneyUnitPrice = pDetail.getTransactionDetail().getUnitPrice().multiply(new BigDecimal(pDetail.getQuantity()));
+				BigDecimal moneyUnitPrice = pDetail.getTransactionDetail().getMrpPrice().multiply(new BigDecimal(pDetail.getQuantity()));
+				
 				moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(pDetail.getTransactionDetail().getVAT().divide(new BigDecimal(100))));
 				transDetail.setTotalPrice(moneyUnitPrice);
 				
@@ -715,6 +766,32 @@ public class AjaxController {
 		InventoryStore store =  inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
 		List<InventoryStoreDrugTransactionDetail> listViewStockBalance = inventoryService.listStoreDrugTransactionDetail(store.getId(), drugId, formulationId , expiry);
 		model.addAttribute("listViewStockBalance", listViewStockBalance);
+		
+		
+		for(InventoryStoreDrugTransactionDetail isdt:listViewStockBalance)
+		{
+			
+			for(InventoryStoreDrugTransactionDetail ifdt: isdt.getSubDetails() )
+			{ 	
+				if(ifdt.getParent().getRate()!=null && ifdt.getParent().getWaiverPercentage()!=null)
+					{
+			model.addAttribute("cashDiscount",(ifdt.getParent().getRate().multiply(new BigDecimal(ifdt.getClosingBalance())).multiply(new BigDecimal(ifdt.getParent().getWaiverPercentage()).multiply(new BigDecimal(1).divide(new BigDecimal(100))))).setScale(1, BigDecimal.ROUND_HALF_UP));
+					}
+				if(ifdt.getParent().getCgst()!=null && ifdt.getParent().getUnitPrice()!=null)
+				{
+					model.addAttribute("cgstAmount",((ifdt.getParent().getCgst().multiply(new BigDecimal(ifdt.getClosingBalance()).multiply(ifdt.getParent().getUnitPrice()))).divide(new BigDecimal(100))).setScale(1, BigDecimal.ROUND_HALF_UP));
+	
+				}
+				if(ifdt.getParent().getSgst()!=null && ifdt.getParent().getUnitPrice()!=null)
+				{
+					model.addAttribute("sgstAmount",((ifdt.getParent().getSgst().multiply(new BigDecimal(ifdt.getClosingBalance()).multiply(ifdt.getParent().getUnitPrice()))).divide(new BigDecimal(100))).setScale(1, BigDecimal.ROUND_HALF_UP));
+	
+				}
+			
+			}
+			
+
+		}
 		return "/module/inventory/mainstore/viewStockBalanceDetail";
 	}
 	@RequestMapping("/module/inventory/itemViewStockBalanceDetail.form")
@@ -731,6 +808,35 @@ public class AjaxController {
 		InventoryStore store =  inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
 		List<InventoryStoreDrugTransactionDetail> listViewStockBalance = inventoryService.listStoreDrugTransactionDetail(store.getId(), drugId, formulationId, expiry);
 		model.addAttribute("listViewStockBalance", listViewStockBalance);
+		List<InventoryStoreDrugTransactionDetail> listmainstoretransactdetail = inventoryService.listTransactionDetailByDrugFormulation(drugId, formulationId);
+		
+		List<InventoryStoreDrugTransactionDetail> listtransactdetail= new CopyOnWriteArrayList<InventoryStoreDrugTransactionDetail>();
+
+		for(InventoryStoreDrugTransactionDetail id:listmainstoretransactdetail)
+{ if(id.getParent()==null)
+	{if(listtransactdetail.isEmpty()==true)
+	{
+		listtransactdetail.add(id);
+		
+	}
+	else
+	{
+		for(InventoryStoreDrugTransactionDetail l:listtransactdetail)
+		{
+			if(l.getBatchNo().equals(id.getBatchNo()))
+			{listtransactdetail.remove(l);
+			
+			
+			}
+			
+		}
+		listtransactdetail.add(id);
+		
+		
+	}
+	
+	}
+}model.addAttribute("listmainstoretransactdetail",listtransactdetail);
 		return "/module/inventory/substore/viewStockBalanceDetail";
 	}
 	@RequestMapping("/module/inventory/itemViewStockBalanceSubStoreDetail.form")
@@ -745,12 +851,83 @@ public class AjaxController {
 	@RequestMapping("/module/inventory/subStoreIssueDrugDettail.form")
 	public String viewDetailIssueDrug( @RequestParam(value="issueId",required=false)  Integer issueId, Model model) {
 		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
+		Concept conceptPaidCategory=Context.getConceptService().getConceptByName("Paid Category");
+		Collection<ConceptAnswer> cpcAns=conceptPaidCategory.getAnswers();
+		List<String> conceptListForPaidCategory = new ArrayList<String>();
+		for(ConceptAnswer cpc:cpcAns){
+			conceptListForPaidCategory.add(cpc.getAnswerConcept().getId().toString());
+		}
+		
+		Concept conceptPrograms=Context.getConceptService().getConceptByName("Programs");
+		Collection<ConceptAnswer> cpAns=conceptPrograms.getAnswers();
+		List<String> conceptListForPrograms = new ArrayList<String>();
+		for(ConceptAnswer cp:cpAns){
+			conceptListForPrograms.add(cp.getAnswerConcept().getId().toString());
+		}
 		List<InventoryStoreDrugPatientDetail> listDrugIssue = inventoryService.listStoreDrugPatientDetail(issueId);
+		InventoryStoreDrugPatient inventoryStoreDrugPatient = new InventoryStoreDrugPatient();
 		model.addAttribute("listDrugIssue", listDrugIssue);
+		
 		if(CollectionUtils.isNotEmpty(listDrugIssue)){
+			inventoryStoreDrugPatient=listDrugIssue.get(0).getStoreDrugPatient();
 			model.addAttribute("issueDrugPatient", listDrugIssue.get(0).getStoreDrugPatient());
 			model.addAttribute("date", listDrugIssue.get(0).getStoreDrugPatient().getCreatedOn());
 		}
+		if(inventoryStoreDrugPatient!=null){
+			HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
+			Integer patientCategoryConcept=Integer.parseInt(inventoryStoreDrugPatient.getPatientCategory());
+			Concept concept=Context.getConceptService().getConcept(patientCategoryConcept);
+			model.addAttribute("patientCategory", concept.getName());
+			List<PersonAttribute> pas = hcs.getPersonAttributes(inventoryStoreDrugPatient.getPatient().getId());
+			for (PersonAttribute pa : pas) {
+				PersonAttributeType attributeType = pa.getAttributeType();
+			if (attributeType.getPersonAttributeTypeId() == 31) {
+				String patientCategory=pa.getValue();
+				Integer patientSubCategoryConcept=Integer.parseInt(patientCategory);
+				Concept subconcept=Context.getConceptService().getConcept(patientSubCategoryConcept);
+				model.addAttribute("patientSubCategory", subconcept.getName());
+			}
+			if (attributeType.getPersonAttributeTypeId() == 29) {
+				String dohId=pa.getValue();
+				model.addAttribute("dohId", dohId);
+			}
+			}
+			model.addAttribute("billNo",inventoryStoreDrugPatient.getId());
+			
+			if (conceptListForPaidCategory.contains(inventoryStoreDrugPatient.getPatientCategoryf())) {
+				model.addAttribute("categoryf", "Paid Category");
+				if(inventoryStoreDrugPatient.getPatientCategoryf()!=null){
+				model.addAttribute("subCategoryf", Context.getConceptService().getConcept(Integer.parseInt(inventoryStoreDrugPatient.getPatientCategory())));
+				}
+				if(inventoryStoreDrugPatient.getPatientSubcategoryf()!=null){
+				model.addAttribute("childCategoryf", Context.getConceptService().getConcept(Integer.parseInt(inventoryStoreDrugPatient.getPatientSubcategoryf())));
+				}
+			}
+			else if(conceptListForPrograms.contains(inventoryStoreDrugPatient.getPatientCategoryf())){
+				model.addAttribute("categoryf", "Programs");
+				if(inventoryStoreDrugPatient.getPatientCategoryf()!=null){
+				model.addAttribute("subCategoryf", Context.getConceptService().getConcept(Integer.parseInt(inventoryStoreDrugPatient.getPatientCategoryf())));
+				}
+				if(inventoryStoreDrugPatient.getPatientSubcategoryf()!=null){
+				model.addAttribute("childCategoryf", Context.getConceptService().getConcept(Integer.parseInt(inventoryStoreDrugPatient.getPatientSubcategoryf())));
+				}
+			}
+		}
+		if(CollectionUtils.isNotEmpty(listDrugIssue)){
+		for(InventoryStoreDrugPatientDetail issue:listDrugIssue){
+		model.addAttribute("totalAmount", issue.getTransactionDetail().getTotalAmount());
+		model.addAttribute("discount", issue.getTransactionDetail().getWaiverPercentage());
+		model.addAttribute("discountAmount", issue.getTransactionDetail().getWaiverAmount());
+		model.addAttribute("discountComment", issue.getTransactionDetail().getComments());
+		model.addAttribute("totalAmountPayable", issue.getTransactionDetail().getAmountPayable());
+		model.addAttribute("amountGiven", issue.getTransactionDetail().getAmountGiven());
+		model.addAttribute("amountReturned", issue.getTransactionDetail().getAmountReturned());
+		model.addAttribute("voided", issue.getTransactionDetail().getVoided());
+		}	
+		}
+		String hospitalName=GlobalPropertyUtil.getString("hospitalcore.hospitalParticularName", "Kollegal DVT Hospital");
+		model.addAttribute("hospitalName", hospitalName);
+		
 		return "/module/inventory/substore/subStoreIssueDrugDettail";
 	}
 	
@@ -790,11 +967,61 @@ public class AjaxController {
 	public String drugReceiptDetail( @RequestParam(value="receiptId",required=false)  Integer receiptId, Model model) {
 		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
 		List<InventoryStoreDrugTransactionDetail> transactionDetails = inventoryService.listTransactionDetail(receiptId);
+
 		if(!CollectionUtils.isEmpty(transactionDetails)){
 			model.addAttribute("store", transactionDetails.get(0).getTransaction().getStore());
+			model.addAttribute("vendorName", transactionDetails.get(0).getTransaction().getDescription());
 			model.addAttribute("date", transactionDetails.get(0).getTransaction().getCreatedOn());
+			
+			
 		}
 		model.addAttribute("transactionDetails", transactionDetails);
+		model.addAttribute("receiptNo", transactionDetails.get(0).getTransaction().getReceiptNo());
+	
+		 if(transactionDetails!=null)
+		 {
+		 float totAmtgst[]=new float[transactionDetails.size()]; BigDecimal totAmountafterGst=new BigDecimal(0.0);
+		 float totAmt[]=new float[transactionDetails.size()]; BigDecimal totAmount=new BigDecimal(0.0);
+		 float totCD[]=new float[transactionDetails.size()];BigDecimal totCDamount=new BigDecimal(0.0);
+		 float totcgst[]=new float[transactionDetails.size()];BigDecimal totcgstAmount=new BigDecimal(0.0);
+		 float totsgst[]=new float[transactionDetails.size()];BigDecimal totsgstAmount=new BigDecimal(0.0);
+		 for(int i=0;i<transactionDetails.size();i++)
+		 {
+			 if( totAmtgst[i]==0.0)
+			 {totAmtgst[i]=totAmtgst[i]+transactionDetails.get(i).getTotalAmountAfterGst().floatValue();
+			 }
+			 if(transactionDetails.get(i).getWaiverAmount().floatValue()!=0.0)
+			 {
+			 if(totCD[i]==0.0)
+			 {totCD[i]=totCD[i]+transactionDetails.get(i).getWaiverAmount().floatValue(); 
+			 }
+			 }
+			if(transactionDetails.get(i).getCgstAmount()!=null)
+			{ if(totcgst[i]==0.0)
+			 {totcgst[i]=totcgst[i]+transactionDetails.get(i).getCgstAmount().floatValue();
+			 }
+			}
+			if(transactionDetails.get(i).getSgstAmount()!=null)
+			 {
+				if(totsgst[i]==0.0)
+			 {totsgst[i]=totsgst[i]+transactionDetails.get(i).getSgstAmount().floatValue();	 
+			 }
+			 }
+			 if( totAmt[i]==0.0)
+			 {totAmt[i]=totAmt[i]+transactionDetails.get(i).getTotalPrice().floatValue();
+			 }
+			 totAmountafterGst=totAmountafterGst.add(new BigDecimal(totAmtgst[i]));
+			 totCDamount=totCDamount.add(new BigDecimal(totCD[i]));
+			 totcgstAmount=totcgstAmount.add(new BigDecimal(totcgst[i]));
+			 totsgstAmount=totsgstAmount.add(new BigDecimal(totsgst[i]));
+			 totAmount=totAmount.add(new BigDecimal(totAmt[i]));
+		 }
+		model.addAttribute("totAmountafterGst",totAmountafterGst.setScale(2, BigDecimal.ROUND_HALF_UP));
+		model.addAttribute("totAmount",totAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		model.addAttribute("totCDamount",totCDamount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		model.addAttribute("totcgstAmount", totcgstAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		model.addAttribute("totsgstAmount", totsgstAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		 }
 		return "/module/inventory/mainstore/receiptsToGeneralStoreDetail";
 	}
 	@RequestMapping("/module/inventory/itemReceiptDetail.form")
@@ -889,7 +1116,98 @@ public class AjaxController {
 	}
 	return "redirect:/module/inventory/viewStockBalanceExpiry.form";
 	}
+			//order from opd
+	@RequestMapping("/module/inventory/processDrugOrder.form")
+	public String listReceiptDrugAvailablee(
+			@RequestParam(value = "drugId", required = false) Integer drugId,
+			@RequestParam(value = "formulationId", required = false) Integer formulationId,
+			@RequestParam(value = "frequencyName", required = false) String frequencyName,
+			@RequestParam(value = "days", required = false) Integer days,
+			@RequestParam(value = "comments", required = false) String comments,
+			Model model) {
+
+		InventoryService inventoryService = (InventoryService) Context
+				.getService(InventoryService.class);
+		InventoryDrug drug = inventoryService.getDrugById(drugId);
+		InventoryStore store = inventoryService
+				.getStoreByCollectionRole(new ArrayList<Role>(Context
+						.getAuthenticatedUser().getAllRoles()));
+		if (store != null && drug != null && formulationId != null) {
+			List<InventoryStoreDrugTransactionDetail> listReceiptDrug = inventoryService
+					.listStoreDrugTransactionDetail(store.getId(),
+							drug.getId(), formulationId, true);
+			// check that drug is issued before
+			int userId = Context.getAuthenticatedUser().getId();
+
+			String fowardParam = "issueDrugAccountDetail_" + userId;
+			String fowardParamDrug = "issueDrugDetail_" + userId;
+			List<InventoryStoreDrugPatientDetail> listDrug = (List<InventoryStoreDrugPatientDetail>) StoreSingleton
+					.getInstance().getHash().get(fowardParamDrug);
+			List<InventoryStoreDrugAccountDetail> listDrugAccount = (List<InventoryStoreDrugAccountDetail>) StoreSingleton
+					.getInstance().getHash().get(fowardParam);
+			List<InventoryStoreDrugTransactionDetail> listReceiptDrugReturn = new ArrayList<InventoryStoreDrugTransactionDetail>();
+			boolean check = false;
+			if (CollectionUtils.isNotEmpty(listDrug)) {
+				if (CollectionUtils.isNotEmpty(listReceiptDrug)) {
+					for (InventoryStoreDrugTransactionDetail drugDetail : listReceiptDrug) {
+						for (InventoryStoreDrugPatientDetail drugPatient : listDrug) {
+							if (drugDetail.getId().equals(
+									drugPatient.getTransactionDetail().getId())) {
+								drugDetail.setCurrentQuantity(drugDetail
+										.getCurrentQuantity()
+										- drugPatient.getQuantity());
+							}
+
+						}
+						if (drugDetail.getCurrentQuantity() > 0) {
+							listReceiptDrugReturn.add(drugDetail);
+							check = true;
+						}
+					}
+				}
+			}
+
+			if (CollectionUtils.isNotEmpty(listDrugAccount)) {
+				if (CollectionUtils.isNotEmpty(listReceiptDrug)) {
+					for (InventoryStoreDrugTransactionDetail drugDetail : listReceiptDrug) {
+						for (InventoryStoreDrugAccountDetail drugAccount : listDrugAccount) {
+							if (drugDetail.getId().equals(
+									drugAccount.getTransactionDetail().getId())) {
+								drugDetail.setCurrentQuantity(drugDetail
+										.getCurrentQuantity()
+										- drugAccount.getQuantity());
+							}
+						}
+						if (drugDetail.getCurrentQuantity() > 0 && !check) {
+							listReceiptDrugReturn.add(drugDetail);
+						}
+					}
+				}
+			}
+			if (CollectionUtils.isEmpty(listReceiptDrugReturn)
+					&& CollectionUtils.isNotEmpty(listReceiptDrug)) {
+				listReceiptDrugReturn.addAll(listReceiptDrug);
+			}
+
+			model.addAttribute("listReceiptDrug", listReceiptDrugReturn);
+
 			
+			String listOfDrugQuantity = "";
+			for (InventoryStoreDrugTransactionDetail lrdr : listReceiptDrugReturn) {
+				listOfDrugQuantity = listOfDrugQuantity
+						+ lrdr.getId().toString() + ".";
+				
+			}
+
+			model.addAttribute("listOfDrugQuantity", listOfDrugQuantity);
+			model.addAttribute("frequencyName", frequencyName);
+			model.addAttribute("noOfDays", days);
+			model.addAttribute("comments", comments);
+		}
+
+		return "/module/inventory/queue/processDrugOrder";
+	}
+	
 	@RequestMapping("/module/inventory/removeObjectFromList.form")
 	public String removeObjectFromList( @RequestParam(value="position")  Integer position,@RequestParam(value="check")  Integer check, Model model) {
 		int userId = Context.getAuthenticatedUser().getId();
@@ -952,6 +1270,7 @@ public class AjaxController {
 				list.remove(a);
 			}
 			StoreSingleton.getInstance().getHash().put(fowardParam5, list);
+			System.out.println("bbbbbbbbbbbb");
 			return "redirect:/module/inventory/subStoreIssueDrugForm.form";
 		case 6:
 			//process fowardParam6

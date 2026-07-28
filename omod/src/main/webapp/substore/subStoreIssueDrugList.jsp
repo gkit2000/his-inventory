@@ -42,6 +42,8 @@
 		<td><input type="text" id="fromDate" class="date-pick left" readonly="readonly" name="fromDate" value="${fromDate}" title="Double Click to Clear" ondblclick="this.value='';"/></td>
 		<td><spring:message code="inventory.toDate"/></td>
 		<td><input type="text" id="toDate" class="date-pick left" readonly="readonly" name="toDate" value="${toDate}" title="Double Click to Clear" ondblclick="this.value='';"/></td>
+		<td>Bill No.</td>
+		<td><input type="text" id="billNo" name="billNo" value="${billNo }" ></td>
 		<td><input type="submit" class="ui-button ui-widget ui-state-default ui-corner-all" value="Search"/></td>
 	</tr>
 </table>
@@ -51,16 +53,21 @@
 <table width="100%" cellpadding="5" cellspacing="0">
 	<tr>
 	<th>#</th>
+	<th>Bill No.</th>
 	<th><spring:message code="inventory.issueDrug.identifier"/></th>
 	<th>Name</th>
 	<th>Age</th>
 	<th><spring:message code="inventory.issueDrug.createdOn"/></th>
+	<th>&nbsp;</th>
+	<th>Description</th>
+	<th>Voided By</th>
 	</tr>
 	<c:choose>
 	<c:when test="${not empty listIssue}">
 	<c:forEach items="${listIssue}" var="issue" varStatus="varStatus">
 	<tr class='${varStatus.index % 2 == 0 ? "oddRow" : "evenRow" } '>
 		<td><c:out value="${(( pagingUtil.currentPage - 1  ) * pagingUtil.pageSize ) + varStatus.count }"/></td>
+	     <td> ${issue.id}</td>
 		<td> <a href="#" title="Detail issue drug to this patient" onclick="ISSUE.detailIssueDrug('${issue.id}');">${issue.identifier}</a> </td>
 		<td>${issue.patient.givenName}&nbsp;${issue.patient.middleName}&nbsp;${issue.patient.familyName}</td>
 		<td>
@@ -70,6 +77,15 @@
               	</c:choose>
         </td>	
 		<td><openmrs:formatDate date="${issue.createdOn}" type="textbox"/></td>
+		<c:if test="${issue.voided == 1}">
+		<td><font color="black">Voided Bill</font></td>
+		<td>${issue.voidedReason}</td>
+		<td>${issue.voidedBy}</td>
+		</c:if>
+		<c:if test="${issue.duplicateBill == 1}">
+		<td><font color="red">Duplicate Bill</font></td>
+		</c:if>
+		
 		</tr>
 	</c:forEach>
 	</c:when>

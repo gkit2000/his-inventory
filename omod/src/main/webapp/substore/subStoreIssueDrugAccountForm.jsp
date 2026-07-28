@@ -122,7 +122,7 @@
 </div>
 <!-- Purchase list -->
 <div style="width: 58%; float: right; margin-right: 16px; ">
-<b class="boxHeader">Issue drugs to account</b>
+<b class="boxHeader">Issue drugs to Account/Return</b>
 <div class="box">
 <c:if  test="${not empty issueDrugAccount}">
 <table class="box" width="100%">
@@ -163,7 +163,7 @@
 			<td>
 				<c:if  test="${not empty listDrugAccountDetail && not empty issueDrugAccount}">
 					<input type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="bttprocess" value="<spring:message code="inventory.finish"/>" onclick="ISSUE.processIssueDrugToAccount('0');" />
-					<input type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="bttprint"   value="<spring:message code="inventory.print"/>" onClick="PURCHASE.printDiv();" />
+					<!--  <input type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="bttprint"   value="<spring:message code="inventory.print"/>" onClick="PURCHASE.printDiv();" />-->
 				</c:if>
 				<c:if  test="${not empty listDrugAccountDetail || not empty issueDrugAccount}">
 					<input type="button" class="ui-button ui-widget ui-state-default ui-corner-all" id="bttclear" value="<spring:message code="inventory.clear"/>"  onclick="ISSUE.processIssueDrugToAccount('1');"/>

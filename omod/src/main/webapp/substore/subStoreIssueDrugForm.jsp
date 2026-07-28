@@ -26,12 +26,205 @@
 	scope="page" />
 <%@ include file="/WEB-INF/template/header.jsp"%>
 <%@ include file="../includes/js_css.jsp"%>
+<script type="text/javascript">
+jQuery(document).ready(function(){ jQuery("#creditheader").hide();
 
+jQuery("#cashheader").hide();
+var tot=parseFloat(${total});
+jQuery("#totalValue").val("");
+jQuery("#totalValue").val(tot);
+
+var waiverPercentage=parseFloat(${waiverPercentage});
+jQuery("#waiverPercentage").val("");
+jQuery("#waiverPercentage").val(waiverPercentage);
+
+var totalAmountPay=parseFloat(${totalAmountPayable});
+jQuery("#totalAmountPayable").val("");
+jQuery("#totalAmountPayable").val(totalAmountPay);
+
+
+});
+</script>
+
+<script type="text/javascript">
+
+function credit()
+{
+if(jQuery("#amountGiven").val()!="")
+	{
+	jQuery("#amountGiven").val(null);
+	jQuery("#amountReturned").val(null);
+	}
+//jQuery("#amountGiven").attr("disabled", "disabled");
+//jQuery("#amountReturned").attr("disabled", "disabled");
+jQuery("#amtgiven").hide();
+jQuery("#amtreturned").hide();
+jQuery("#amtgivn").hide();
+jQuery("#amtreturnd").hide();
+jQuery("#creditheader").show();
+if(confirm("Are you sure?")){
+	jQuery("#sub").attr("disabled", "disabled");
+	PURCHASE.printDiv();
+	return true;
+	}
+}
+
+
+function totalAmountToPay(){
+var total=jQuery("#totalValue").val();
+var waiverPercentage=jQuery("#waiverPercentage").val();
+var totalAmountPay=total-(total*waiverPercentage)/100;
+var tap=Math.round(totalAmountPay);
+jQuery("#totalAmountPayable").val(tap);
+var amountGiven=jQuery("#amountGiven").val();
+var amountReturned=amountGiven-tap;
+jQuery("#amountReturned").val(amountReturned);
+}
+
+function amountReturnedToPatient(){
+var totalAmountToPay=jQuery("#totalAmountPayable").val();
+var amountGiven=jQuery("#amountGiven").val();
+var amountReturned=amountGiven-totalAmountToPay;
+jQuery("#amountReturned").val(amountReturned);
+}
+</script>
+
+<script type="text/javascript">
+function finishDrugOrder() {
+
+if(jQuery("#waiverPercentage").val() ==""){
+alert("Please enter Discount Percentage");
+return false;
+}
+
+if(jQuery("#waiverPercentage").val() < 0 ){
+alert("Please enter correct Discount Percentage");
+return false;
+}
+
+                
+/*if(jQuery("#waiverPercentage").val()>0 && jQuery("#waiverComment").val() ==""){
+alert("Please enter comment");
+return false;
+}
+*/
+
+if(jQuery("#amountGiven").val() ==""){
+alert("Please enter Amount Given");
+return false;
+}
+
+if(jQuery("#amountGiven").val() < 0 || !StringUtils.isDigit(jQuery("#amountGiven").val())){
+alert("Please enter correct Amount Given");
+return false;
+}
+
+var amgiv=jQuery("#amountGiven").val();
+var tamp=jQuery("#totalAmountPayable").val();
+
+if(amgiv-tamp < 0 ){
+alert("Amount Given must be greater than Total Amount Payable");
+return false;
+}
+
+if(jQuery("#amountReturned").val() ==""){
+alert("Please enter Amount Returned");
+return false;
+}
+
+if(jQuery("#amountReturned").val() < 0 || !StringUtils.isDigit(jQuery("#amountReturned").val())){
+alert("Please enter correct Amount Returned");
+return false;
+}
+
+jQuery("#bttprocess").attr("disabled", "disabled");
+
+jQuery("#cashheader").show();
+               
+ISSUE.processSlip('0');
+}
+</script>
+
+<script type="text/javascript">
+function finishPrint() {
+
+if(jQuery("#waiverPercentage").val() ==""){
+alert("Please enter Discount Percentage");
+return false;
+}
+
+if(jQuery("#waiverPercentage").val() < 0 ){
+alert("Please enter correct Discount Percentage");
+return false;
+}
+
+                
+/*if(jQuery("#waiverPercentage").val()>0 && jQuery("#waiverComment").val() ==""){
+alert("Please enter comment");
+return false;
+}
+*/
+
+if(jQuery("#amountGiven").val() ==""){
+alert("Please enter Amount Given");
+return false;
+}
+
+if(jQuery("#amountGiven").val() < 0 || !StringUtils.isDigit(jQuery("#amountGiven").val())){
+alert("Please enter correct Amount Given");
+return false;
+}
+
+var amgiv=jQuery("#amountGiven").val();
+var tamp=jQuery("#totalAmountPayable").val();
+
+if(amgiv-tamp < 0 ){
+alert("Amount Given must be greater than Total Amount Payable");
+return false;
+}
+
+if(jQuery("#amountReturned").val() ==""){
+alert("Please enter Amount Returned");
+return false;
+}
+
+if(jQuery("#amountReturned").val() < 0 || !StringUtils.isDigit(jQuery("#amountReturned").val())){
+alert("Please enter correct Amount Returned");
+return false;
+}
+
+jQuery("#bttprint").attr("disabled", "disabled");
+
+jQuery("#cashheader").show();
+               
+PURCHASE.printDiv();
+}
+
+function calculateTotalDiscount() {
+    var totalDiscount = 0;
+
+    jQuery(".rowTotal").each(function(index) {
+        var row = jQuery(this).closest("tr");
+
+        var mrp = parseFloat(row.find("td:eq(4)").text()) || 0;
+        var qty = parseFloat(row.find("td:eq(3)").text()) || 0;
+        var discount = parseFloat(row.find(".rowDiscount").text()) || 0;
+
+        var total = mrp * qty;
+        var discountAmt = (total * discount) / 100;
+
+        totalDiscount += discountAmt;
+    });
+
+    jQuery("#totalDiscount").val(Math.round(totalDiscount));
+}
+</script>
+
+<form method="post" id="formIssueDrug">
 <div style="width: 40%; float: left; margin-left: 4px;">
 	<b class="boxHeader">Drug</b>
 	<div class="box">
 
-		<form method="post" id="formIssueDrug">
 			<c:if test="${not empty errors}">
 				<c:forEach items="${errors}" var="error">
 					<span class="error"><spring:message code="${error}" /></span>
@@ -136,7 +329,6 @@
 				class="ui-button ui-widget ui-state-default ui-corner-all"
 				value="<spring:message code="inventory.back"/>"
 				onclick="ACT.go('subStoreIssueDrugList.form');">
-		</form>
 	</div>
 </div>
 <!-- Purchase list -->
@@ -148,12 +340,14 @@
 				<tr>
 					<th>Identifier</th>
 					<th>Category</th>
+					<th>SubCategory</th>
 					<th>Name</th>
 					<th>Age</th>
 				</tr>
 				<tr>
 					<td>${issueDrugPatient.patient.patientIdentifier.identifier}</td>
-					<td>${issueDrugPatient.patientCategory}</td>
+					<td>${patientCategory}</td>
+				     <td>${patientSubCategory}</td>
 					<td>${issueDrugPatient.patient.givenName}&nbsp;${issueDrugPatient.patient.middleName}&nbsp;${issueDrugPatient.patient.familyName}</td>
 					<td><c:choose>
 							<c:when test="${issueDrugPatient.patient.age == 0  }">&lt 1</c:when>
@@ -168,10 +362,13 @@
 		<table class="box" width="100%" cellpadding="5" cellspacing="0">
 			<tr>
 				<th>#</th>
-				<th><spring:message code="inventory.drug.category" /></th>
+			
 				<th><spring:message code="inventory.drug.name" /></th>
 				<th><spring:message code="inventory.drug.formulation" /></th>
 				<th><spring:message code="inventory.receiptDrug.quantity" /></th>
+				<th><spring:message code="inventory.receiptDrug.MRP" /></th>
+				<th>Discountaaa %</th>
+                <th>Total</th>
 			</tr>
 			<c:choose>
 				<c:when test="${not empty listPatientDetail}">
@@ -179,11 +376,22 @@
 						varStatus="varStatus">
 						<tr class='${varStatus.index % 2 == 0 ? "oddRow" : "evenRow" } '>
 							<td><c:out value="${varStatus.count }" /></td>
-							<td>${issue.transactionDetail.drug.category.name}</td>
+							
 							<td><a href="#" title="Remove this"
 								onclick="INVENTORY.removeObject('${varStatus.index}','5');">${issue.transactionDetail.drug.name}</a></td>
 							<td>${issue.transactionDetail.formulation.name}-${issue.transactionDetail.formulation.dozage}</td>
 							<td>${issue.quantity}</td>
+							<td>${issue.transactionDetail.mrpPrice}</td>
+							<td>
+    <span class="rowDiscount">
+        ${issue.discountPercent != null ? issue.discountPercent : 0}
+    </span> %
+</td>
+                            <td>
+                            <span class="rowTotal">
+                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                            </span>
+                         </td>
 						</tr>
 					</c:forEach>
 
@@ -191,6 +399,41 @@
 			</c:choose>
 		</table>
 		<br />
+		
+		<table class="box" width="100%" cellpadding="5" cellspacing="0">
+		<tr>
+		<td>Total</td>
+		<td><input type="text" id="totalValue" name="totalValue"
+				size="11" value="0"/></td>
+		</tr>
+		<tr>
+    <td>Total Discountbbbb</td>
+    <td>
+        <input type="text" id="totalDiscount" readonly="true"/>
+    </td>
+</tr>
+		<tr>
+		<td>Total amount payable</td>
+		<td><input type="text" id="totalAmountPayable" name="totalAmountPayable"
+				size="11" value="0" readOnly="true"/></td>
+		</tr>
+		<tr>
+		<td>Comment</td>
+		<td><input type="text" id="waiverComment" name="waiverComment" size="11"/></td>
+		</tr>
+		<tr>
+		<td id=amtg >Amount Given</td>
+		<td><input type="text" id="amountGiven" name="amountGiven" size="11" onkeyup="amountReturnedToPatient();"></td>
+		</tr>
+		<tr>
+		<td id=amtr>Amount Returned to Patient</td>
+		<td><input type="text" id="amountReturned" name="amountReturned" size="11" readOnly="true"/></td>
+		</tr>
+		<tr>
+		<td> </td>
+		<td> </td>
+		</tr>
+		</table>
 
 		<table class="box" width="100%" cellpadding="5" cellspacing="0">
 			<tr>
@@ -198,12 +441,15 @@
 						test="${not empty listPatientDetail && not empty issueDrugPatient}">
 						<input type="button"
 							class="ui-button ui-widget ui-state-default ui-corner-all"
-							id="bttprocess" value="<spring:message code="inventory.finish"/>"
-							onclick="ISSUE.processSlip('0');" />
+							id="bttprocess" name="bttprocess" value="<spring:message code="inventory.finish"/>"
+							onclick="finishDrugOrder();" />
+							<input type="submit" id="sub" name="sub"
+							class="ui-button ui-widget ui-state-default ui-corner-all"
+				value="<spring:message code='inventory.drug.process.credit'/>"  onClick="credit();" />
 						<input type="button"
 							class="ui-button ui-widget ui-state-default ui-corner-all"
-							id="bttprint" value="<spring:message code="inventory.print"/>"
-							onClick="PURCHASE.printDiv();" />
+							id="bttprint" name="bttprint" value="<spring:message code="inventory.print"/>"
+							onClick="finishPrint();" />
 					</c:if> <c:if
 						test="${not empty listPatientDetail || not empty issueDrugPatient}">
 						<input type="button"
@@ -216,71 +462,193 @@
 
 	</div>
 </div>
+</form>
 <!-- PRINT DIV -->
-<div id="printDiv" style="display: none;">
-	<div
-		style="margin: 10px auto; width: 981px; font-size: 1.0em; font-family: 'Dot Matrix Normal', Arial, Helvetica, sans-serif;">
+<div id="printDiv" style="display: none;"
+		style="width: 1280px; font-size: 0.8em">
+
+		<style>
+@media print {
+	.donotprint {
+		display: none;
+	}
+	.spacer {
+		margin-top: 50px;
+		font-family: "Dot Matrix Normal", Arial, Helvetica, sans-serif;
+		font-style: normal;
+		font-size: 14px;
+	}
+	.printfont {
+		font-family: "Dot Matrix Normal", Arial, Helvetica, sans-serif;
+		font-style: normal;
+		font-size: 14px;
+	}
+}
+</style>
 		<c:if test="${not empty issueDrugPatient}">
-			<br />
-			<br />
-			<center style="float: center; font-size: 2.2em">Issue Drug To Patient</center>
-			<br />
-			<br />
-			<table border="1">
+			<br><br>  
+<div align="center">
+  <tr><td style="text-align:center;">
+	     <img  type="image" src="../../moduleResources/inventory/Logo_DFY.jpg" align="middle"/>
+	     </td>
+	     </tr>
+		 <tr><td> <h2>${hospitalName}</h2> </td></tr>
+		 </div>
+<div id="creditheader" style="color:red;text-align: center;">CREDIT BILL</div>  
+<div id="cashheader" style="color:red;text-align: center;">CASH BILL</div>  
+			<table align='Center'>
+			<tr><td>BILL NO.:${isdpdt}</td></tr>
 				<tr>
-					<td>Patient identifier</td>
-					<td>${issueDrugPatient.identifier }</td>
-				</tr>
-				<tr>
-					<td>Patient category</td>
-					<td>${issueDrugPatient.patientCategory }</td>
-				</tr>
-				<tr>
-					<td>Name</td>
-					<td>${issueDrugPatient.patient.givenName}&nbsp;${issueDrugPatient.patient.middleName}&nbsp;${issueDrugPatient.patient.familyName}</td>
+					<td>Patient ID :</td>
+					<td>${issueDrugPatient.identifier }&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					
+					<td>Name :</td>
+			        <td>${issueDrugPatient.patient.givenName}&nbsp;${issueDrugPatient.patient.familyName}</td>
 				</tr>
 				<tr>
 					<td>Age</td>
 					<td><c:choose>
 							<c:when test="${issueDrugPatient.patient.age == 0  }">&lt 1</c:when>
 							<c:otherwise>${issueDrugPatient.patient.age }</c:otherwise>
-						</c:choose></td>
+						</c:choose>
+						&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+						
+					<td>Gender:</td>
+        	        <td>${issueDrugPatient.patient.gender}</td>  	
 				</tr>
 				<tr>
+     <c:if test="${not empty dohId}">
+			<td id="doh">DoH Id:</td>
+			<td id="dohid">${dohId}</td>
+			</c:if>
+      
+      </tr>
+				<tr>
 					<td>Date</td>
-					<td><openmrs:formatDate date="${date}" type="textbox" /></td>
+					<td><openmrs:formatDate date="${date}" type="textbox" />&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+					
+					<td>Patient Category:</td>
+			        <td>${patientCategory} &nbsp;&nbsp;&nbsp; ${patientSubCategory}</td>
 				</tr>
 			</table>
+			<hr  color="black">
 			<br />
 		</c:if>
-		<table border="1">
+		<table style="width:100%">
+			<thead>
+			<h4 align="left" style="color:black">Drugs Issued by Pharmacy</h4>
 			<tr>
-				<th>#</th>
-				<th><spring:message code="inventory.drug.category" /></th>
-				<th><spring:message code="inventory.drug.name" /></th>
-				<th><spring:message code="inventory.drug.formulation" /></th>
-				<th><spring:message code="inventory.receiptDrug.quantity" /></th>
+				<th style="text-align: center;">#</th>
+				<th style="text-align: center;"><spring:message code="inventory.drug.name" /></th>
+				<th style="text-align: center;"><spring:message code="inventory.drug.formulation" /></th>
+				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.batchNo" /></th>
+                <th style="text-align: center;"><spring:message code="inventory.receiptDrug.dateExpiry" /></th>
+				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.quantity" /></th>
+				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.MRP" /></th>
+				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.total" /></th>
 			</tr>
+			</thead>
+			<tbody>
 			<c:choose>
 				<c:when test="${not empty listPatientDetail}">
 					<c:forEach items="${listPatientDetail}" var="issue"
 						varStatus="varStatus">
 						<tr class='${varStatus.index % 2 == 0 ? "oddRow" : "evenRow" } '>
-							<td><c:out value="${varStatus.count }" /></td>
-							<td>${issue.transactionDetail.drug.category.name}</td>
-							<td>${issue.transactionDetail.drug.name}</td>
-							<td>${issue.transactionDetail.formulation.name}-${issue.transactionDetail.formulation.dozage}</td>
-							<td>${issue.quantity}</td>
+							<td style="text-align: center;"><c:out value="${varStatus.count }" /></td>
+							
+						
+							<td style="text-align: center;">${issue.transactionDetail.drug.name}</td>
+							<td style="text-align: center;">${issue.transactionDetail.formulation.name}-${issue.transactionDetail.formulation.dozage}</td>
+							<td style="text-align: center;">${issue.transactionDetail.batchNo}</td>
+							<td style="text-align: center;"><openmrs:formatDate date="${issue.transactionDetail.dateExpiry}"
+								type="textbox" /></td>
+							<td style="text-align: center;">${issue.quantity}</td>
+							<td style="text-align: center;">${issue.transactionDetail.mrpPrice}</td>
+							<td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 						</tr>
 					</c:forEach>
-
 				</c:when>
 			</c:choose>
+			<tr>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">Total amount</td>
+<td style="text-align: center;"><span id="printableTotal" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">Discount %</td>
+<td style="text-align: center;"><span id="printableDiscount" /></td>
+</tr>
+<tr>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">&nbsp;</td>
+	<td style="text-align: center;">DiscountAmount</td>
+	<td style="text-align: center;"><span id="printableDiscountAmount" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">Total amount payable</td>
+<td style="text-align: center;"><span id="printableTotalAmountPayable" /></td>
+</tr>
+<!--  
+<tr>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td id=amtgiven style="text-align: center;">Amount Given</td>
+<td id="amtgivn" style="text-align: center;"><span id="printableGiven" /></td>
+</tr>
+<tr>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td style="text-align: center;">&nbsp;</td>
+<td id="amtreturned" style="text-align: center;">Amount Returned</td>
+<td id="amtreturnd" style="text-align: center;"><span id="printableAmountReturned" /></td>
+</tr>--->
+			</tbody>
 		</table>
+	
+<table style="width:100%">
+	<tr>
+		<td><b>Comment: </b><span id="printableDiscountComment"></span></td>
+	</tr>
+	<tr>
+		<td><b>Total Amount  Payable Rupees:</b><span id="printableTotalPayable" > </span> only</td>
+	</tr>
+</table>
 		<br /> <br /> <br /> <br /> <br /> <br /> 
-		<!-- [Inventory] kesavulu 21/03/2013 Support #1136 In the Print out of receipt signature  Inventory clerk changed to  pharmacist -->
 		<span style="float: right; font-size: 1.5em">Signature of pharmacist/ Stamp</span>
-	</div>
 </div>
 <!-- END PRINT DIV -->
 

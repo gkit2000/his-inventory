@@ -18,13 +18,17 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Date;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Criteria;
+import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
 import org.hibernate.criterion.Order;
 import org.hibernate.criterion.ProjectionList;
@@ -42,7 +46,10 @@ import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatient;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatientDetail;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransaction;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransactionDetail;
+import org.openmrs.module.hospitalcore.model.OpdDrugOrder;
+import org.openmrs.module.hospitalcore.model.PatientSearch;
 import org.openmrs.module.hospitalcore.util.ActionValue;
+import org.openmrs.module.inventory.InventoryConstants;
 import org.openmrs.module.inventory.db.InventoryDAO;
 import org.openmrs.module.inventory.model.InventoryItem;
 import org.openmrs.module.inventory.model.InventoryItemCategory;
@@ -1127,6 +1134,10 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		return (InventoryStoreDrugTransactionDetail) sessionFactory.getCurrentSession().merge(storeTransactionDetail);
 	}
 	
+	public void saveOrUpdateStoreDrugTransactionDetail(InventoryStoreDrugTransactionDetail storeTransactionDetail) throws DAOException {
+		sessionFactory.getCurrentSession().saveOrUpdate(storeTransactionDetail);
+    }
+	
 	public int countStoreDrugTransactionDetail(Integer storeId, Integer categoryId, String drugName, String formulationName,
 	                                           String fromDate, String toDate) throws DAOException {
 		Criteria criteria = sessionFactory.getCurrentSession()
@@ -1231,8 +1242,23 @@ public class HibernateInventoryDAO implements InventoryDAO {
 			}
 		}
 		criteria.addOrder(Order.asc("transactionDetail.dateExpiry"));
+		
 		List<InventoryStoreDrugTransactionDetail> l = criteria.list();
-		return l;
+
+		Map<String, InventoryStoreDrugTransactionDetail> uniqueBatch = new LinkedHashMap<String, InventoryStoreDrugTransactionDetail>();
+
+		for (InventoryStoreDrugTransactionDetail d : l) {
+
+		    String key = d.getBatchNo() + "_" + d.getDateExpiry();
+		    System.out.println("xxxxxxxxxxxxxxx-"+d.getId());
+		    System.out.println("yyyyyyyyyyyyyyy-"+d.getQuantity());
+
+		    if (!uniqueBatch.containsKey(key)) {
+		        uniqueBatch.put(key, d);
+		    }
+		}
+
+		return new ArrayList<InventoryStoreDrugTransactionDetail>(uniqueBatch.values());
 	}
 	
 	public List<InventoryStoreDrugTransactionDetail> listStoreDrugTransactionDetail(Integer storeId, Integer drugId,
@@ -1243,7 +1269,8 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		        .createAlias("transactionDetail.transaction", "transaction")
 		        .add(Restrictions.eq("transaction.store.id", storeId))
 		        .add(Restrictions.eq("transactionDetail.drug.id", drugId))
-		        .add(Restrictions.eq("transactionDetail.formulation.id", formulationId));
+		        .add(Restrictions.eq("transactionDetail.formulation.id", formulationId))
+		        .add(Restrictions.eq("transactionDetail.duplicateStatus", 0));
 		criteria.addOrder(Order.desc("transactionDetail.createdOn"));
 		if (isExpiry != null && isExpiry == 1) {
 			criteria.add(Restrictions.lt("transactionDetail.dateExpiry", new Date()));
@@ -1269,7 +1296,12 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		proList.add(Projections.sum("currentQuantity"));
 		criteria.setProjection(proList);
 		Object l = criteria.uniqueResult();
-		return l != null ? (Integer) l : 0;
+		Integer it=0;
+		if(l!=null){
+		String st=l.toString();
+		it=Integer.parseInt(st);
+		}
+		return l != null ? it : 0;
 	}
 	
 	public List<InventoryStoreDrugTransactionDetail> listStoreDrugAvaiable(Integer storeId, Collection<Integer> drugs,
@@ -1304,7 +1336,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 			InventoryStoreDrugTransactionDetail tDetail = new InventoryStoreDrugTransactionDetail();
 			tDetail.setDrug((InventoryDrug) row[0]);
 			tDetail.setFormulation((InventoryDrugFormulation) row[1]);
-			tDetail.setCurrentQuantity((Integer) row[2]);
+			tDetail.setCurrentQuantity(Integer.parseInt(row[2].toString()));
 			list.add(tDetail);
 			//System.out.println("I: "+i+" drug: "+tDetail.getDrug().getName()+" formulation: "+tDetail.getFormulation().getName()+" quantity: "+tDetail.getCurrentQuantity());
 		}
@@ -1394,9 +1426,9 @@ public class HibernateInventoryDAO implements InventoryDAO {
 			InventoryStoreDrugTransactionDetail tDetail = new InventoryStoreDrugTransactionDetail();
 			tDetail.setDrug((InventoryDrug) row[0]);
 			tDetail.setFormulation((InventoryDrugFormulation) row[1]);
-			tDetail.setCurrentQuantity((Integer) row[2]);
-			tDetail.setQuantity((Integer) row[3]);
-			tDetail.setIssueQuantity((Integer) row[4]);
+			tDetail.setCurrentQuantity(Integer.parseInt(row[2].toString()));
+			tDetail.setQuantity(Integer.parseInt(row[3].toString()));
+			tDetail.setIssueQuantity(Integer.parseInt(row[4].toString()));
 			list.add(tDetail);
 		}
 		
@@ -1445,6 +1477,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		if (!StringUtils.isBlank(drugName)) {
 			criteria.add(Restrictions.like("drugAlias.name", "%" + drugName + "%"));
 		}
+
 		if (!StringUtils.isBlank(fromDate) && StringUtils.isBlank(toDate)) {
 			String startFromDate = fromDate + " 00:00:00";
 			String endFromDate = fromDate + " 23:59:59";
@@ -2027,7 +2060,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 	 * InventoryStoreDrugPatient
 	 */
 	public List<InventoryStoreDrugPatient> listStoreDrugPatient(Integer storeId, String name, String fromDate,
-	                                                            String toDate, int min, int max) throws DAOException {
+	                                                            String toDate, int min, int max,Integer billNo) throws DAOException {
 		Criteria criteria = sessionFactory.getCurrentSession().createCriteria(InventoryStoreDrugPatient.class, "bill")
 		        .setResultTransformer(Criteria.DISTINCT_ROOT_ENTITY).createAlias("bill.store", "store");
 		
@@ -2077,7 +2110,12 @@ public class HibernateInventoryDAO implements InventoryDAO {
 				e.printStackTrace();
 			}
 		}
-		criteria.addOrder(Order.desc("bill.createdOn"));
+		if (billNo != null) {
+
+			criteria.add(Restrictions.eq("bill.id", billNo));
+		}
+		//criteria.addOrder(Order.desc("bill.createdOn"));
+		criteria.addOrder(Order.desc("bill.id"));
 		criteria.setFirstResult(min).setMaxResults(max);
 		List<InventoryStoreDrugPatient> l = criteria.list();
 		return l;
@@ -2091,6 +2129,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		if (storeId != null) {
 			criteria.add(Restrictions.eq("store.id", storeId));
 		}
+	
 		if (!StringUtils.isBlank(name)) {
 			criteria.add(Restrictions.or(Restrictions.like("bill.identifier", "%" + name + "%"),
 			    Restrictions.like("bill.name", "%" + name + "%")));
@@ -2132,6 +2171,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 				e.printStackTrace();
 			}
 		}
+		
 		Number rs = (Number) criteria.uniqueResult();
 		return rs != null ? rs.intValue() : 0;
 	}
@@ -2140,11 +2180,12 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		return (InventoryStoreDrugPatient) sessionFactory.getCurrentSession().merge(bill);
 	}
 	
-	public InventoryStoreDrugPatient getStoreDrugPatientById(Integer id) throws DAOException {
+	public List<InventoryStoreDrugPatient> getStoreDrugPatientById(Integer patientId) throws DAOException {
 		Criteria criteria = sessionFactory.getCurrentSession()
 		        .createCriteria(InventoryStoreDrugPatient.class, "drugPatient");
-		criteria.add(Restrictions.eq("patientBill.id", id));
-		return (InventoryStoreDrugPatient) criteria.uniqueResult();
+		criteria.add(Restrictions.eq("patient.id",patientId ));
+		List<InventoryStoreDrugPatient> l = criteria.list();
+		return l;
 	}
 	
 	/**
@@ -2166,7 +2207,7 @@ public class HibernateInventoryDAO implements InventoryDAO {
 	public InventoryStoreDrugPatientDetail getStoreDrugPatientDetailById(Integer id) throws DAOException {
 		Criteria criteria = sessionFactory.getCurrentSession()
 		        .createCriteria(InventoryStoreDrugPatientDetail.class, "billDetail")
-		        .add(Restrictions.eq("billDetail.id", id));
+		        .add(Restrictions.eq("billDetail.storeDrugPatient.id", id));
 		
 		return (InventoryStoreDrugPatientDetail) criteria.uniqueResult();
 	}
@@ -3681,5 +3722,113 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		
 		return (InventoryStoreDrugAccountDetail) criteria.uniqueResult();
 	}
+	//order from opd
+	public List<OpdDrugOrder> listOfDrugOrder(Integer patientId,
+			Integer encounterId) throws DAOException {
+		String hql = "from OpdDrugOrder o where o.patient='" + patientId
+				+ "' AND o.encounter='" + encounterId
+				+ "' AND o.orderStatus=0 AND o.cancelStatus=0";
+		Session session = sessionFactory.getCurrentSession();
+		Query q = session.createQuery(hql);
+		List<OpdDrugOrder> list = q.list();
+		return list;
+	}
+	public OpdDrugOrder getOpdDrugOrder(Integer patientId,Integer encounterId,Integer inventoryDrugId,Integer formulationId) throws DAOException {
+		Criteria criteria = sessionFactory.getCurrentSession().createCriteria(
+				OpdDrugOrder.class);
+		criteria.add(Restrictions.eq("patient.id", patientId));
+		criteria.add(Restrictions.eq("encounter.encounterId", encounterId));
+		criteria.add(Restrictions.eq("inventoryDrug.id", inventoryDrugId));
+		criteria.add(Restrictions.eq("inventoryDrugFormulation.id", formulationId));
+
+		return (OpdDrugOrder) criteria.uniqueResult();
+	}
+	public List<OpdDrugOrder> listOfOrder(Integer patientId, Date date)
+			throws DAOException {
 	
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String startDate = sdf.format(date) + " 00:00:00";
+		String endDate = sdf.format(date) + " 23:59:59";
+		String hql = "from OpdDrugOrder o where o.patient='"
+				+ patientId
+				+ "' AND o.createdOn BETWEEN '"
+				+ startDate
+				+ "' AND '"
+				+ endDate
+				+ "' AND o.orderStatus=0 AND o.cancelStatus=0 GROUP BY encounter";
+		Session session = sessionFactory.getCurrentSession();
+		Query q = session.createQuery(hql);
+		List<OpdDrugOrder> list = q.list();
+		return list;
+	}
+	public int countSearchListOfPatient(Date date, String searchKey,
+			int page) throws DAOException {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String startDate = sdf.format(date) + " 00:00:00";
+		String endDate = sdf.format(date) + " 23:59:59";
+		String hql = "SELECT DISTINCT ps from PatientSearch ps,OpdDrugOrder o INNER JOIN o.patient p where ps.patientId=p.patientId " +
+		" AND o.createdOn BETWEEN '"+ startDate+ "' AND '" + endDate + "' " +
+		" AND o.orderStatus=0 AND o.cancelStatus=0 " +
+		" AND (ps.identifier LIKE '%" 	+ searchKey + "%' OR ps.fullname LIKE '%" + searchKey + "%')";
+		Session session = sessionFactory.getCurrentSession();
+		Query q = session.createQuery(hql);
+		List<PatientSearch> list = q.list();
+		return list.size();
+	}
+	
+	public List<PatientSearch> searchListOfPatient(Date date, String searchKey,
+			int page) throws DAOException {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String startDate = sdf.format(date) + " 00:00:00";
+		String endDate = sdf.format(date) + " 23:59:59";
+		String hql = "SELECT DISTINCT ps from PatientSearch ps,OpdDrugOrder o INNER JOIN o.patient p where ps.patientId=p.patientId " +
+		" AND o.createdOn BETWEEN '"+ startDate+ "' AND '" + endDate + "' " +
+		" AND o.orderStatus=0 AND o.cancelStatus=0 " +
+		" AND (ps.identifier LIKE '%" 	+ searchKey + "%' OR ps.fullname LIKE '" + searchKey + "%')";
+		int firstResult = (page - 1) * InventoryConstants.PAGESIZE;
+		Session session = sessionFactory.getCurrentSession();
+		Query q = session.createQuery(hql);
+		List<PatientSearch> list = q.list();
+		return list;
+	}
+	public List<PatientSearch> searchListOfPatient(Date date, String searchKey,
+			int page,int pgSize) throws DAOException {
+		SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd");
+		String startDate = sdf.format(date) + " 00:00:00";
+		String endDate = sdf.format(date) + " 23:59:59";
+		String hql = "SELECT DISTINCT ps from PatientSearch ps,OpdDrugOrder o INNER JOIN o.patient p where ps.patientId=p.patientId " +
+		" AND o.createdOn BETWEEN '"+ startDate+ "' AND '" + endDate + "' " +
+		" AND o.orderStatus=0 AND o.cancelStatus=0 " +
+		" AND (ps.identifier LIKE '%" 	+ searchKey + "%' OR ps.fullname LIKE '%"  + searchKey + "%')";
+		int firstResult = (page - 1) * pgSize;
+		Session session = sessionFactory.getCurrentSession();
+		Query q = session.createQuery(hql).setMaxResults(pgSize).setFirstResult(firstResult);
+		List<PatientSearch> list = q.list();
+		return list;
+	}
+	public List<InventoryStoreDrugPatient> listPatientDetail() throws DAOException {
+		Criteria criteria = sessionFactory.getCurrentSession()
+		        .createCriteria(InventoryStoreDrugPatient.class, "id");
+		        
+		return criteria.list();
+	}
+	public List<InventoryStoreDrugTransaction> listTransaction() throws DAOException {
+		Criteria criteria = sessionFactory.getCurrentSession()
+		        .createCriteria(InventoryStoreDrugTransaction.class, "transact");
+		        
+		return criteria.list();
+	}
+	@Override
+	public List<InventoryStoreDrugTransactionDetail> listTransactionDetailByDrugFormulation(
+			Integer drugId, Integer formulationId) throws DAOException {
+		Criteria criteria = sessionFactory.getCurrentSession()
+		        .createCriteria(InventoryStoreDrugTransactionDetail.class, "transactionDetail")
+		        .createAlias("transactionDetail.transaction", "transaction")
+		        .add(Restrictions.eq("transactionDetail.drug.id", drugId))
+		        .add(Restrictions.eq("transactionDetail.formulation.id", formulationId));
+
+	return criteria.list();
+	
+	}
+
 }

@@ -14,6 +14,7 @@
 package org.openmrs.module.inventory.impl;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.List;
 
 import org.openmrs.Role;
@@ -30,6 +31,8 @@ import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatient;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatientDetail;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransaction;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransactionDetail;
+import org.openmrs.module.hospitalcore.model.OpdDrugOrder;
+import org.openmrs.module.hospitalcore.model.PatientSearch;
 import org.openmrs.module.inventory.InventoryService;
 import org.openmrs.module.inventory.db.InventoryDAO;
 import org.openmrs.module.inventory.model.InventoryItem;
@@ -496,6 +499,11 @@ public class InventoryServiceImpl extends BaseOpenmrsService implements Inventor
 		return dao.saveStoreDrugTransactionDetail(storeTransactionDetail);
 	}
 	
+	public void saveOrUpdateStoreDrugTransactionDetail(InventoryStoreDrugTransactionDetail storeTransactionDetail) throws APIException {
+     
+		dao.saveOrUpdateStoreDrugTransactionDetail(storeTransactionDetail);
+    }
+	
 	public int countStoreDrugTransactionDetail(Integer storeId, Integer categoryId, String drugName, String formulationName,
 	                                           String fromDate, String toDate) throws APIException {
 		return dao.countStoreDrugTransactionDetail(storeId, categoryId, drugName, formulationName, fromDate, toDate);
@@ -660,8 +668,8 @@ public class InventoryServiceImpl extends BaseOpenmrsService implements Inventor
 	 * InventoryStoreDrugPatient
 	 */
 	public List<InventoryStoreDrugPatient> listStoreDrugPatient(Integer storeId, String name, String fromDate,
-	                                                            String toDate, int min, int max) throws APIException {
-		return dao.listStoreDrugPatient(storeId, name, fromDate, toDate, min, max);
+	                                                            String toDate, int min, int max,Integer billNo) throws APIException {
+		return dao.listStoreDrugPatient(storeId, name, fromDate, toDate, min, max,billNo);
 	}
 	
 	public int countStoreDrugPatient(Integer storeId, String name, String fromDate, String toDate) throws APIException {
@@ -672,7 +680,7 @@ public class InventoryServiceImpl extends BaseOpenmrsService implements Inventor
 		return dao.saveStoreDrugPatient(bill);
 	}
 	
-	public InventoryStoreDrugPatient getStoreDrugPatientById(Integer id) throws APIException {
+	public List<InventoryStoreDrugPatient> getStoreDrugPatientById(Integer id) throws APIException {
 		return dao.getStoreDrugPatientById(id);
 	}
 	
@@ -971,5 +979,41 @@ public class InventoryServiceImpl extends BaseOpenmrsService implements Inventor
 	public InventoryStoreDrugAccountDetail getStoreDrugAccountDetailById(Integer id) throws APIException {
 		return dao.getStoreDrugAccountDetailById(id);
 	}
+	//order from opd
+	public List<OpdDrugOrder> listOfDrugOrder(Integer patientId, Integer encounterId) throws APIException {
+		return dao.listOfDrugOrder(patientId,encounterId);
+	}
 	
+	public OpdDrugOrder getOpdDrugOrder(Integer patientId,Integer encounterId,Integer inventoryDrugId,Integer formulationId) throws APIException {
+		return dao.getOpdDrugOrder(patientId,encounterId,inventoryDrugId,formulationId);
+	}
+	public List<OpdDrugOrder> listOfOrder(Integer patientId,Date date) throws APIException {
+		return dao.listOfOrder(patientId,date);
+	}
+	public int countSearchListOfPatient(Date date, String searchKey,int page) throws APIException {
+		return dao.countSearchListOfPatient(date,searchKey,page);
+	}
+	public List<PatientSearch> searchListOfPatient(Date date, String searchKey,int page) throws APIException {
+		return dao.searchListOfPatient(date,searchKey,page);
+	}
+	 public List<PatientSearch> searchListOfPatient(Date date, String searchKey,int page,int pgSize) throws APIException {
+			return dao.searchListOfPatient(date,searchKey,page,pgSize);
+		}
+		// bill id
+		@Override
+		public List<InventoryStoreDrugPatient> listPatientDetail() throws APIException {
+			// TODO Auto-generated method stub
+			return dao.listPatientDetail();
+		}
+		public List<InventoryStoreDrugTransaction> listTransaction() throws APIException {
+			// TODO Auto-generated method stub
+			return dao.listTransaction();
+		}
+		@Override
+		public List<InventoryStoreDrugTransactionDetail> listTransactionDetailByDrugFormulation(
+				Integer drugId, Integer formulationId) throws APIException {
+			// TODO Auto-generated method stub
+			return dao.listTransactionDetailByDrugFormulation(drugId,formulationId);
+		}
+
 }

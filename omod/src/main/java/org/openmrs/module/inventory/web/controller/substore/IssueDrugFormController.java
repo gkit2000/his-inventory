@@ -21,8 +21,12 @@ import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.openmrs.Concept;
+import org.openmrs.PersonAttribute;
+import org.openmrs.PersonAttributeType;
 import org.openmrs.Role;
 import org.openmrs.api.context.Context;
+import org.openmrs.module.hospitalcore.HospitalCoreService;
 import org.openmrs.module.hospitalcore.model.InventoryDrug;
 import org.openmrs.module.hospitalcore.model.InventoryDrugCategory;
 import org.openmrs.module.hospitalcore.model.InventoryDrugFormulation;
@@ -30,6 +34,7 @@ import org.openmrs.module.hospitalcore.model.InventoryStore;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatient;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugPatientDetail;
 import org.openmrs.module.hospitalcore.model.InventoryStoreDrugTransactionDetail;
+import org.openmrs.module.hospitalcore.util.GlobalPropertyUtil;
 import org.openmrs.module.inventory.InventoryService;
 import org.openmrs.module.inventory.web.controller.global.StoreSingleton;
 import org.springframework.stereotype.Controller;
@@ -43,7 +48,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 public class IssueDrugFormController {
 	
 	@RequestMapping(method = RequestMethod.GET)
-	public String firstView(@RequestParam(value = "categoryId", required = false) Integer categoryId, Model model) {
+	public String firstView(@RequestParam(value = "categoryId", required = false) Integer categoryId, Model model,
+			HttpServletRequest request) {
 		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
 		//InventoryStore store =  inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
 		/*if(store != null && store.getParent() != null && store.getIsDrug() != 1){
@@ -63,10 +69,11 @@ public class IssueDrugFormController {
 		if (categoryId != null && categoryId > 0) {
 			List<InventoryDrug> drugs = inventoryService.findDrug(categoryId, null);
 			model.addAttribute("drugs", drugs);
-			
+	
 		} else {
 			List<InventoryDrug> drugs = inventoryService.getAllDrug();
 			model.addAttribute("drugs", drugs);
+		
 		}
 		
 		model.addAttribute("date", new Date());
@@ -75,10 +82,87 @@ public class IssueDrugFormController {
 		String fowardParam = "issueDrugDetail_" + userId;
 		List<InventoryStoreDrugPatientDetail> list = (List<InventoryStoreDrugPatientDetail>) StoreSingleton.getInstance()
 		        .getHash().get(fowardParam);
+	
 		InventoryStoreDrugPatient issueDrugPatient = (InventoryStoreDrugPatient) StoreSingleton.getInstance().getHash()
 		        .get("issueDrug_" + userId);
 		model.addAttribute("listPatientDetail", list);
 		model.addAttribute("issueDrugPatient", issueDrugPatient);
+		String discountPercentage = request.getParameter("discountPercentage");
+		System.out.println("xxxxxxxxxxxxxxxxxx-"+discountPercentage);
+
+		Float totalValu = 0f;
+		Float totalAmountPy = 0f;
+
+		Float discountPercentge = 0f;
+
+		if (discountPercentage != null && discountPercentage.trim().length() > 0) {
+			discountPercentge = Float.parseFloat(discountPercentage);
+		}
+		if(list != null){
+
+		    for(InventoryStoreDrugPatientDetail lst : list){
+
+		        Float unitPrice = lst.getTransactionDetail().getMrpPrice().floatValue();
+		        Integer quantity = lst.getQuantity();
+
+		        Float discount = 0f;
+
+		        if(lst.getDiscountPercent() != null){
+		            discount = lst.getDiscountPercent();
+		        }
+
+		        Float total = quantity * unitPrice;
+
+		        Float discountedTotal = total - (total * discount / 100);
+
+		        totalValu = totalValu + discountedTotal;
+		    }
+
+		}
+		totalAmountPy = totalValu - (totalValu * discountPercentge / 100);
+		model.addAttribute("total", totalValu);
+		model.addAttribute("totalAmountPayable", Math.round(totalAmountPy));
+		model.addAttribute("discountPercentage", discountPercentge);
+		
+		if(issueDrugPatient!=null){
+			HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
+		Integer patientCategoryConcept=Integer.parseInt(issueDrugPatient.getPatientCategory());
+		Concept concept=Context.getConceptService().getConcept(patientCategoryConcept);
+		model.addAttribute("patientCategory", concept.getName());
+		List<PersonAttribute> pas = hcs.getPersonAttributes(issueDrugPatient.getPatient().getId());
+		for (PersonAttribute pa : pas) {
+			PersonAttributeType attributeType = pa.getAttributeType();
+		if (attributeType.getPersonAttributeTypeId() == 31) {
+			String patientCategory=pa.getValue();
+			Integer patientSubCategoryConcept=Integer.parseInt(patientCategory);
+			Concept subconcept=Context.getConceptService().getConcept(patientSubCategoryConcept);
+			
+			model.addAttribute("patientSubCategory", subconcept.getName());
+		}
+		
+		if (attributeType.getPersonAttributeTypeId() == 29) {
+			String dohId=pa.getValue();
+			model.addAttribute("dohId", dohId);
+		}
+		}
+		
+		List<InventoryStoreDrugPatient> inventoryStoreDrugPatient = new ArrayList<InventoryStoreDrugPatient>();
+		inventoryStoreDrugPatient=inventoryService.listPatientDetail();
+		for(InventoryStoreDrugPatient is:inventoryStoreDrugPatient)
+		{
+			
+			model.addAttribute("isdpdt", (is.getId()+1));
+
+		}
+			
+			
+		
+		}
+		String hospitalName=GlobalPropertyUtil.getString("hospitalcore.hospitalParticularName", "Kollegal DVT Hospital");
+		model.addAttribute("hospitalName", hospitalName);
+		System.out.println("dddddddddddddddd");
+		
+	
 		return "/module/inventory/substore/subStoreIssueDrugForm";
 		
 	}
@@ -86,7 +170,6 @@ public class IssueDrugFormController {
 	@RequestMapping(method = RequestMethod.POST)
 	public String submit(HttpServletRequest request, Model model) {
 		List<String> errors = new ArrayList<String>();
-		
 		int drugId=0;
 		String drugN="",drugIdStr="";
 		InventoryDrug drug=null;
@@ -117,7 +200,6 @@ public class IssueDrugFormController {
 			 drugId = drug.getId();
 			}
 		
-		
 		InventoryDrugFormulation formulationO = inventoryService.getDrugFormulationById(formulation);
 		if (formulationO == null) {
 			errors.add("inventory.receiptDrug.formulation.required");
@@ -137,6 +219,7 @@ public class IssueDrugFormController {
 			        .get("issueDrug_" + userId);
 			model.addAttribute("issueDrugPatient", issueDrugPatient);
 			model.addAttribute("listPatientDetail", list);
+			System.out.println("eeeeeeeeeeeeeeee");
 			return "/module/inventory/substore/subStoreIssueDrugForm";
 		}
 		
@@ -151,7 +234,7 @@ public class IssueDrugFormController {
 			for (InventoryStoreDrugTransactionDetail t : listReceiptDrug) {
 				
 				Integer temp = NumberUtils.toInt(request.getParameter(t.getId() + ""), 0);
-				//System.out.println(" transaction detail "+t.getId() +" : "+temp);
+				
 				if (temp > 0) {
 					checkCorrect = false;
 				} else {
@@ -183,6 +266,7 @@ public class IssueDrugFormController {
 			        .get("issueDrug_" + userId);
 			model.addAttribute("issueDrugPatient", issueDrugPatient);
 			model.addAttribute("listPatientDetail", list);
+			System.out.println("fffffffffffffff");
 			return "/module/inventory/substore/subStoreIssueDrugForm";
 		}
 		
@@ -208,7 +292,7 @@ public class IssueDrugFormController {
 						}
 					}
 				}
-				//System.out.println("temp add vao issue : "+temp);
+			
 				InventoryStoreDrugPatientDetail issueDrugDetail = new InventoryStoreDrugPatientDetail();
 				issueDrugDetail.setTransactionDetail(t);
 				issueDrugDetail.setQuantity(temp);
@@ -218,8 +302,11 @@ public class IssueDrugFormController {
 		StoreSingleton.getInstance().getHash().put(fowardParam, listExt);
 		InventoryStoreDrugPatient issueDrugPatient = (InventoryStoreDrugPatient) StoreSingleton.getInstance().getHash()
 		        .get("issueDrug_" + userId);
-		//model.addAttribute("issueDrugPatient", issueDrugPatient);
+		model.addAttribute("issueDrugPatient", issueDrugPatient);
 		//model.addAttribute("listPatientDetail", list);
-		return "redirect:/module/inventory/subStoreIssueDrugForm.form";
+		String discountPercent=request.getParameter("waiverPercentage");
+		Float discountPercentage=Float.parseFloat(discountPercent);
+		System.out.println("gggggggggggggggggg-"+discountPercentage);
+		return "redirect:/module/inventory/subStoreIssueDrugForm.form?discountPercentage=" + discountPercentage;
 	}
 }

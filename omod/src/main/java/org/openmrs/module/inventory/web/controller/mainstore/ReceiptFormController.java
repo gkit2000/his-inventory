@@ -51,6 +51,21 @@ public class ReceiptFormController {
 	 String fowardParam = "reipt_"+userId;
 	 List<InventoryStoreDrugTransactionDetail> list = (List<InventoryStoreDrugTransactionDetail> )StoreSingleton.getInstance().getHash().get(fowardParam);
 	 model.addAttribute("listReceipt", list);
+	 if(list!=null)
+	 {
+	 float totAmtgst[]=new float[list.size()]; double totAmountafterGst=0.0;
+	 for(int i=0;i<list.size();i++)
+	 {
+		 if( totAmtgst[i]==0.0)
+		
+		 {totAmtgst[i]=totAmtgst[i]+list.get(i).getTotalAmountAfterGst().floatValue();
+		
+		 }
+		 totAmountafterGst=totAmountafterGst+totAmtgst[i];
+	 }
+	model.addAttribute("totAmountafterGst", totAmountafterGst);
+	 }
+	
 	 
 	 return "/module/inventory/mainstore/receiptsToGeneralStore";
 	 
@@ -85,14 +100,22 @@ public class ReceiptFormController {
 		}else{
 		 drugId = drug.getId();
 		}
+		
 		int quantity = NumberUtils.toInt(request.getParameter("quantity"),0);
 		BigDecimal VAT = NumberUtils.createBigDecimal(request.getParameter("VAT"));
-		BigDecimal unitPrice =  NumberUtils.createBigDecimal(request.getParameter("unitPrice"));
+		BigDecimal Rate=  NumberUtils.createBigDecimal(request.getParameter("rate"));
+		BigDecimal sgst=  NumberUtils.createBigDecimal(request.getParameter("sgst"));
+	
+		BigDecimal cgst=  NumberUtils.createBigDecimal(request.getParameter("cgst"));
+	
+		BigDecimal mrPrice =  NumberUtils.createBigDecimal(request.getParameter("mrPrice"));
+		float waiverPercentage =  Float.parseFloat(request.getParameter("waiverPercentage"));
 		String batchNo = request.getParameter("batchNo");
 		String companyName = request.getParameter("companyName");
 		String dateManufacture = request.getParameter("dateManufacture");
 		String dateExpiry = request.getParameter("dateExpiry");
 		String receiptDate = request.getParameter("receiptDate");
+		BigDecimal costToPatient = NumberUtils.createBigDecimal(request.getParameter("costToPatient"));
 		if(!StringUtils.isBlank(dateManufacture)){
 			Date dateManufac = DateUtils.getDateFromStr(dateManufacture);
 			Date dateExpi = DateUtils.getDateFromStr(dateExpiry);
@@ -118,9 +141,11 @@ public class ReceiptFormController {
 			model.addAttribute("formulation", formulation);
 			model.addAttribute("drugId", drugId);
 			model.addAttribute("quantity", quantity);
-			model.addAttribute("VAT", VAT);
+			//model.addAttribute("VAT", VAT);
 			model.addAttribute("batchNo", batchNo);
-			model.addAttribute("unitPrice", unitPrice);
+			model.addAttribute("mrpPrice", mrPrice);
+			model.addAttribute("Discount", waiverPercentage);
+			
 			model.addAttribute("companyName", companyName);
 			model.addAttribute("dateManufacture", dateManufacture);
 			model.addAttribute("companyName", companyName);
@@ -136,8 +161,36 @@ public class ReceiptFormController {
 		transactionDetail.setCompanyName(companyName);
 		transactionDetail.setCurrentQuantity(quantity);
 		transactionDetail.setQuantity(quantity);
-		transactionDetail.setUnitPrice(unitPrice);
+		transactionDetail.setMrpPrice(mrPrice);
+		transactionDetail.setWaiverPercentage(waiverPercentage);
+		BigDecimal waiverAmount=Rate.multiply(new BigDecimal(quantity)).multiply(new BigDecimal(waiverPercentage).multiply(new BigDecimal(1).divide(new BigDecimal(100))));
+		transactionDetail.setWaiverAmount(waiverAmount.floatValue());
+		BigDecimal unitPrice = Rate;
+		if(waiverPercentage!=0.0)
+		{
+			 unitPrice = Rate.subtract(new BigDecimal(waiverPercentage).multiply(new BigDecimal(.01)).multiply(Rate));
+			
+		}
+		transactionDetail.setUnitPrice(unitPrice.setScale(2, BigDecimal.ROUND_HALF_UP));
 		transactionDetail.setVAT(VAT);
+		transactionDetail.setRate(Rate);
+		transactionDetail.setCgst(cgst);
+		transactionDetail.setSgst(sgst);
+		BigDecimal cgstAmount=new BigDecimal(0.0);
+		BigDecimal sgstAmount=new BigDecimal(0.0);
+		
+		if(cgst.doubleValue()!=0.00)
+		{
+	     cgstAmount= (cgst.multiply(new BigDecimal(quantity).multiply(unitPrice))).divide(new BigDecimal(100));
+		transactionDetail.setCgstAmount(cgstAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		
+		}
+		if(sgst.doubleValue()!=0.00)
+		{
+		sgstAmount= (sgst.multiply(new BigDecimal(quantity).multiply(unitPrice))).divide(new BigDecimal(100));
+		transactionDetail.setSgstAmount(sgstAmount.setScale(2, BigDecimal.ROUND_HALF_UP));
+		}
+		
 		transactionDetail.setIssueQuantity(0);
 		transactionDetail.setCreatedOn(new Date());
 		SimpleDateFormat formatter = new SimpleDateFormat("dd/MM/yyyy HH:mm:ss");
@@ -148,16 +201,20 @@ public class ReceiptFormController {
 		}
 		transactionDetail.setDateManufacture(DateUtils.getDateFromStr(dateManufacture));
 		transactionDetail.setReceiptDate(DateUtils.getDateFromStr(receiptDate));
-		
-		
-		/*Money moneyUnitPrice = new Money(unitPrice);
-		Money totl = moneyUnitPrice.times(quantity);
-		totl = totl.plus(totl.times((double)VAT/100));
-		transactionDetail.setTotalPrice(totl.getAmount());*/
-		
-		BigDecimal moneyUnitPrice = unitPrice.multiply(new BigDecimal(quantity));
-		moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(VAT.divide(new BigDecimal(100))));
-		transactionDetail.setTotalPrice(moneyUnitPrice);
+		BigDecimal totprice=new BigDecimal(0.0);
+		totprice=new BigDecimal(quantity).multiply(Rate);
+		BigDecimal totalAmountAfterGst =new BigDecimal(0.0);
+		if(cgst.doubleValue()!=0.00 || sgst.doubleValue()!=0.00)
+		{
+		totalAmountAfterGst=totprice.subtract(waiverAmount).add(cgstAmount).add(sgstAmount);
+		}
+		else
+		{  VAT=VAT.multiply(unitPrice).multiply(new BigDecimal(quantity)).multiply(new BigDecimal(.01));
+			totalAmountAfterGst=totprice.subtract(waiverAmount).add(VAT);
+		}
+		transactionDetail.setTotalAmountAfterGst(totalAmountAfterGst.setScale(2, BigDecimal.ROUND_HALF_UP));
+		//BigDecimal moneyUnitPrice = Rate.add(cgstAmount).add(sgstAmount);
+		transactionDetail.setTotalPrice(totprice.setScale(2, BigDecimal.ROUND_HALF_UP));
 		
 		int userId = Context.getAuthenticatedUser().getId();
 		String fowardParam = "reipt_"+userId;

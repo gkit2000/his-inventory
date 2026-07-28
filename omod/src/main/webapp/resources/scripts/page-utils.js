@@ -174,7 +174,7 @@ RECEIPT={
 		detailReceiptDrug : function(receiptId)
 		{
 			if(SESSION.checkSession()){
-				url = "drugReceiptDetail.form?receiptId="+receiptId+"&keepThis=false&TB_iframe=true&height=500&width=1000";
+				url = "drugReceiptDetail.form?receiptId="+receiptId+"&keepThis=false&TB_iframe=true&height=500&width=1260";
 				tb_show("Detail receipt drug....",url,false);
 			}
 		},
@@ -273,10 +273,10 @@ RECEIPT={
 		{
 		  	jQuery("div#printDiv").printArea({mode:"popup",popClose:true,popTitle: "Support by HISP india(hispindia.org)"});
 		},
-		receiptSlip : function(action){
+		receiptSlip : function(action,totAmountafterGst){
 				if(action == 0){
 					if(SESSION.checkSession()){
-						url = "addDescriptionReceiptSlip.form?action="+action+"&keepThis=false&TB_iframe=true&height=200&width=450";
+						url = "addDescriptionReceiptSlip.form?action="+action+"&totAmountafterGst="+totAmountafterGst+"&keepThis=false&TB_iframe=true&height=200&width=450";
 						tb_show("Add description for this slip....",url,false);
 					}
 				}else{
@@ -352,7 +352,32 @@ PURCHASE={
 		},
 		printDiv : function ()
 		{
+		  	var totalValue=jQuery("#totalValue").val();
+			var waiverPercentage=jQuery("#waiverPercentage").val();
+			var waiverAmount=parseFloat(Math.round(((totalValue*waiverPercentage)/100) * 100) / 100).toFixed(2);
+			var totalAmountPayable=jQuery("#totalAmountPayable").val();
+			var waiverComment=jQuery("#waiverComment").val();
+			var amountGiven=jQuery("#amountGiven").val();
+			var amountReturned=jQuery("#amountReturned").val();
+			jQuery("#printableTotal").empty();
+			jQuery("#printableDiscount").empty();
+			jQuery("#printableDiscountAmount").empty();
+			jQuery("#printableDiscountComment").empty();
+			jQuery("#printableTotalAmountPayable").empty();
+			jQuery("#printableTotalPayable").empty();
+			jQuery("#printableGiven").empty();
+			jQuery("#printableAmountReturned").empty();
+		    jQuery("#printableTotal").append("<span style='margin:5px;'>" + totalValue + "</span>");
+		    jQuery("#printableDiscount").append("<span style='margin:5px;'>" + waiverPercentage + "</span>");
+			jQuery("#printableDiscountAmount").append("<span style='margin:5px;'>" + waiverAmount + "</span>");
+			jQuery("#printableDiscountComment").append("<span style='margin:5px;'>" + waiverComment + "</span>");
+		    jQuery("#printableTotalAmountPayable").append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
+		    jQuery("#printableTotalPayable").append("<span style='margin:5px;'>" + toWords(totalAmountPayable) + "</span>");
+		    jQuery("#printableGiven").append("<span style='margin:5px;'>" + amountGiven + "</span>");
+		    jQuery("#printableAmountReturned").append("<span style='margin:5px;'>" + amountReturned + "</span>");
 		  	jQuery("div#printDiv").printArea({mode:"popup",popClose:true,popTitle: "Support by HISP india(hispindia.org)"});
+		  	var data=0;
+		  	ACT.go("processIssueDrug.form?totalValue="+totalValue+"&waiverPercentage="+waiverPercentage+"&totalAmountPayable="+totalAmountPayable+"&waiverComment="+waiverComment+"&amountGiven="+amountGiven+"&amountReturned="+amountReturned+"&action="+data);
 		},
 		processSlip : function(action){
 				if(action == 0){
@@ -813,13 +838,21 @@ ISSUE={
 		},
 		createPatient : function()
 		{
+			var totalValue=jQuery("#totalValue").val();
+			var waiverPercentage=jQuery("#waiverPercentage").val();
+            var totalAmountPay=totalValue-(totalValue*waiverPercentage)/100;
+            var tap=Math.round(totalAmountPay);
 			if(SESSION.checkSession()){
 				url = "createPatientIssueDrug.form?keepThis=false&TB_iframe=true&height=500&width=800";
+				document.cookie = "totalValue="+totalValue;
+				document.cookie = "waiverPercentage="+waiverPercentage;
+				document.cookie = "totalAmountPayable="+tap;
 				tb_show("...",url,false);
 			}
 		},
 		addPatient : function(url)
 		{
+			url=url.replace(/\s/g,'');
 			if(SESSION.checkSession()){
 				self.parent.tb_remove();
 				self.parent.ACT.go(url);
@@ -842,7 +875,13 @@ ISSUE={
 		processSlip : function(data){
 			if(data == 1){
 				if( confirm("Are you sure you want to clear this?")){
-					ACT.go("processIssueDrug.form?action="+data);
+					var totalValue=0;
+					var waiverPercentage=0;
+					var totalAmountPayable=0;
+					var waiverComment="";
+					var amountGiven=0;
+					var amountReturned=0;
+					ACT.go("processIssueDrug.form?totalValue="+totalValue+"&waiverPercentage="+waiverPercentage+"&totalAmountPayable="+totalAmountPayable+"&waiverComment="+waiverComment+"&amountGiven="+amountGiven+"&amountReturned="+amountReturned+"&action="+data);
 				}
 			}else{
 				if( confirm("Are you sure ?")){
@@ -850,7 +889,13 @@ ISSUE={
 					jQuery("#bttprocess").attr("disabled","disabled");
 					jQuery("#bttclear").attr("disabled","disabled");
 					jQuery("#bttprint").attr("disabled","disabled");
-					ACT.go("processIssueDrug.form?action="+data);
+					var totalValue=jQuery("#totalValue").val();
+					var waiverPercentage=jQuery("#waiverPercentage").val();
+					var totalAmountPayable=jQuery("#totalAmountPayable").val();
+					var waiverComment=jQuery("#waiverComment").val();
+					var amountGiven=jQuery("#amountGiven").val();
+					var amountReturned=jQuery("#amountReturned").val();
+					ACT.go("processIssueDrug.form?totalValue="+totalValue+"&waiverPercentage="+waiverPercentage+"&totalAmountPayable="+totalAmountPayable+"&waiverComment="+waiverComment+"&amountGiven="+amountGiven+"&amountReturned="+amountReturned+"&action="+data);
 				}
 			}
 			
