@@ -30,7 +30,7 @@
 <b><a href="#" onclick="ACT.go('viewStockBalanceSubStore.form');"><spring:message code="inventory.viewStockBalance"/></a></b>&nbsp;|
 <b><a href="#" onclick="ACT.go('viewStockBalanceExpiry.form');"><spring:message code="inventory.viewStockBalanceExpiry"/></a></b>&nbsp;|
 <b><a href="#" onclick="ACT.go('subStoreIssueDrugListToVoid.form');"><spring:message code="inventory.voidBill"/></a></b>&nbsp;
-<b><a href="#" onclick="ACT.go('subStoreIssueDrugListToVoid.form');"><spring:message code="inventory.interDepartmentalTransfer"/></a></b>&nbsp;
+<b><a href="#" onclick="ACT.go('interDepartmentalTransfer.form?storeId=${store.id}');"><spring:message code="inventory.interDepartmentalTransfer"/></a></b>&nbsp;
 <br/><br/>
 
 

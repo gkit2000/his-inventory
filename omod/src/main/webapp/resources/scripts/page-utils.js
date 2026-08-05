@@ -472,6 +472,27 @@ INDENT={
 				}
 			}
 		},
+		onBlurDrugTransfer : function(thiz)
+		{
+			var x = jQuery(thiz).val();
+			if(x != null && x != '' ){
+				if(SESSION.checkSession()){
+					var data = jQuery.ajax(
+							{
+								type:"GET"
+								,url: "formulationByDrugNameForTransfer.form"
+								,data: ({drugName :x})	
+								,async: false
+								, cache : false
+							}).responseText;
+					if(data != undefined  && data != null && data != ''){
+						jQuery("#divFormulation").html(data);
+					}else{
+						alert('Please refresh page!');
+					}
+				}
+			}
+		},
 		onBlurDrug : function(thiz)
 		{
 			var x = jQuery(thiz).val();
@@ -806,6 +827,7 @@ ISSUE={
 								,async: false
 								, cache : false
 							}).responseText;
+							
 					if(data != undefined  && data != null && data != ''){
 						jQuery("#divDrugAvailable").html(data);
 					}else{
@@ -814,6 +836,34 @@ ISSUE={
 				}
 			}
 		},
+		formulationOnChangeForTransfer : function(thiz){
+
+    var formulationId = jQuery(thiz).val();
+    var drugId = jQuery("#drugId").val();
+
+    if(formulationId != "" && drugId != ""){
+
+        if(SESSION.checkSession()){
+
+            var qty = jQuery.ajax({
+                type : "GET",
+                url  : "getAvailableQuantity.form",
+                data : {
+                    drugId : drugId,
+                    formulationId : formulationId
+                },
+                async : false,
+                cache : false
+            }).responseText;
+
+            qty = jQuery.trim(qty);
+
+            jQuery("#availableQty").val(qty);
+        }
+    }else{
+        jQuery("#availableQty").val("0");
+    }
+},
 		specificationOnChange : function(thiz){
 			
 				var specificationId = jQuery(thiz).val();

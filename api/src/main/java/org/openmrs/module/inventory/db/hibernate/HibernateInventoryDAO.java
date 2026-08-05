@@ -1304,6 +1304,30 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		return l != null ? it : 0;
 	}
 	
+	public Integer getClosingBalanceOfStore(Integer storeId,
+            Integer drugId,
+            Integer formulationId) {
+
+Criteria criteria = sessionFactory.getCurrentSession()
+.createCriteria(InventoryStoreDrugTransactionDetail.class, "detail")
+.createAlias("detail.transaction", "txn")
+.add(Restrictions.eq("txn.store.id", storeId))
+.add(Restrictions.eq("detail.drug.id", drugId))
+.add(Restrictions.eq("detail.formulation.id", formulationId))
+.addOrder(Order.desc("detail.createdOn"));
+
+criteria.setMaxResults(1);
+
+InventoryStoreDrugTransactionDetail detail =
+(InventoryStoreDrugTransactionDetail) criteria.uniqueResult();
+
+if (detail == null) {
+return 0;
+}
+
+return (int) detail.getClosingBalance();
+}
+	
 	public List<InventoryStoreDrugTransactionDetail> listStoreDrugAvaiable(Integer storeId, Collection<Integer> drugs,
 	                                                                       Collection<Integer> formulations)
 	                                                                                                        throws DAOException {

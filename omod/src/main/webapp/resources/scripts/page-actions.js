@@ -307,6 +307,92 @@ var CHECK =
 					}
 				});
 	},
+	interDepartmentalTransfer : function()
+{
+    jQuery("#drugName").autocomplete('autoCompleteDrugList.form', {
+        minChars:3,
+        delay:1000,
+        scroll:true
+    });
+
+    jQuery("#drugName").result(function(event,data){
+
+        if(data){
+            var value = data.toString();
+            var arr = value.split(",");
+            var drugId = arr[1];
+            jQuery("#drugId").val(drugId);
+        }
+
+    });
+
+    jQuery("#interDepartmentalTransfer").validate({
+
+        event:"blur",
+
+        rules:
+        {
+            "destinationStore":
+            {
+                required:true
+            },
+
+            "drugId":
+            {
+                required:true
+            },
+
+            "formulation":
+            {
+                required:true
+            },
+
+            "quantity":
+            {
+                required:true,
+                digits:true,
+                min:1,
+                max:function(){
+                    return parseInt($("#availableQty").val()) || 0;
+                }
+            }
+        },
+
+        messages:
+        {
+            destinationStore:
+            {
+                required:"Please select Transfer Store"
+            },
+
+            drugId:
+            {
+                required:"Please select Drug"
+            },
+
+            formulation:
+            {
+                required:"Please select Formulation"
+            },
+
+            quantity:
+            {
+                required:"Please enter Quantity",
+                digits:"Only numbers allowed",
+                min:"Quantity should be greater than zero",
+                max:"Transfer quantity cannot exceed Available Quantity"
+            }
+        },
+
+        errorClass:"error",
+
+        errorPlacement:function(error,element){
+            error.insertAfter(element);
+        }
+
+    });
+
+},
 	formMainStoreProcessIndent : function()
 	{
 		jQuery("#formMainStoreProcessIndent").validate();

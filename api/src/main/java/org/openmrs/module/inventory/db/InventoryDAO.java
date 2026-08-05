@@ -330,6 +330,8 @@ public interface InventoryDAO {
 	
 	public Integer sumCurrentQuantityDrugOfStore(Integer storeId, Integer drugId, Integer formulationId) throws DAOException;
 	
+	public Integer getClosingBalanceOfStore(Integer storeId, Integer drugId, Integer formulationId) throws DAOException;
+	
 	public List<InventoryStoreDrugTransactionDetail> listTransactionDetail(Integer transactionId) throws DAOException;
 	
 	public Integer countViewStockBalance(Integer storeId, Integer categoryId, String drugName, String fromDate,

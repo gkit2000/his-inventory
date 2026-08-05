@@ -530,6 +530,11 @@ public class InventoryServiceImpl extends BaseOpenmrsService implements Inventor
 	}
 	
 	@Override
+	public Integer getClosingBalanceOfStore(Integer storeId, Integer drugId, Integer formulationId) throws APIException {
+		return dao.getClosingBalanceOfStore(storeId, drugId, formulationId);
+	}
+	
+	@Override
 	public List<InventoryStoreDrugTransactionDetail> listStoreDrugAvaiable(Integer storeId, Collection<Integer> drugs,
 	                                                                       Collection<Integer> formulations)
 	                                                                                                        throws APIException {

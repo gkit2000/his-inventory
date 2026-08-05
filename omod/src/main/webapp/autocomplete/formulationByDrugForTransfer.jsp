@@ -18,9 +18,9 @@
  *
 --%> 
 <%@ include file="/WEB-INF/template/include.jsp" %>
-<c:choose>
-<c:when test="${not empty drugs}">
-<c:forEach items="${drugs}" var="drug" varStatus="loop">${drug.name}|${drug.id} <%-- ${!loop.last ? ',' : ''} --%>
-</c:forEach>
-</c:when>
-</c:choose>
+<select name="formulation" id="formulation"   onchange="ISSUE.formulationOnChangeForTransfer(this);" style="width: 200px;">
+	   <option value=""><spring:message code="inventory.pleaseSelect"/></option>
+       <c:forEach items="${formulations}" var="formulation">
+           <option value="${formulation.id}" <c:if test="${formulation.id == formulationId }">selected</c:if> >${formulation.name}-${formulation.dozage}</option>
+       </c:forEach>
+</select>

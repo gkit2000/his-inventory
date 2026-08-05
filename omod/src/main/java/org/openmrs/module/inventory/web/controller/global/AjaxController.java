@@ -1,5 +1,6 @@
 package org.openmrs.module.inventory.web.controller.global;
 
+import java.io.IOException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -10,6 +11,7 @@ import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
@@ -108,6 +110,20 @@ public class AjaxController {
 			model.addAttribute("formulations", formulations);
 		}
 		return "/module/inventory/autocomplete/formulationByDrug";
+	}
+	
+	@RequestMapping("/module/inventory/formulationByDrugNameForTransfer.form")
+	public String formulationByDrugNameForTransfer(
+			@RequestParam(value = "drugName", required = false) String drugName,
+			Model model) {
+		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
+		InventoryDrug drug = inventoryService.getDrugByName(drugName);
+		if (drug != null) {
+			List<InventoryDrugFormulation> formulations = new ArrayList<InventoryDrugFormulation>(
+					drug.getFormulations());
+			model.addAttribute("formulations", formulations);
+		}
+		return "/module/inventory/autocomplete/formulationByDrugForTransfer";
 	}
 
 	@RequestMapping("/module/inventory/specificationByItem.form")
@@ -364,6 +380,7 @@ public class AjaxController {
 			model.addAttribute("formulations", formulations);
 			model.addAttribute("drugId", drug.getId());
 		}
+		System.out.println("OOOOOOOOOOOOOOOOOOOOOOO-"+drug.getId());
 		return "/module/inventory/autocomplete/formulationByDrugForIssue";
 	}
 	@RequestMapping("/module/inventory/specificationByItemForIssue.form")
@@ -1298,4 +1315,37 @@ public class AjaxController {
 		
 		return "redirect:/module/inventory/main.form";
 	}
+	
+	@RequestMapping("/module/inventory/getAvailableQuantity.form")
+	public void getAvailableQuantity(
+	        @RequestParam("drugId") Integer drugId,
+	        @RequestParam("formulationId") Integer formulationId,
+	        HttpServletResponse response) throws IOException {
+
+	    InventoryService inventoryService =
+	        (InventoryService) Context.getService(InventoryService.class);
+
+	    InventoryStore store =
+	        inventoryService.getStoreByCollectionRole(
+	            new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
+	    System.out.println("jjjjjjjjjjjjjjj");
+
+	    List<InventoryStoreDrugTransactionDetail> list =
+	        inventoryService.listStoreDrugTransactionDetail(
+	                store.getId(),
+	                drugId,
+	                formulationId,
+	                true);
+
+	    int available = 0;
+
+	    if(list != null){
+	        for(InventoryStoreDrugTransactionDetail d : list){
+	            available += d.getCurrentQuantity();
+	        }
+	    }
+
+	    response.getWriter().print(available);
+	}
+
 }

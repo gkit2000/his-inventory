@@ -56,7 +56,8 @@ public class MyInterceptor implements HandlerInterceptor{
 	public boolean preHandle(HttpServletRequest request, HttpServletResponse response,
 			Object object) throws Exception {
 		InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
-		 InventoryStore store = inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
+		 InventoryStore store = inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));request.getSession().setAttribute("currentStore", store);
+		    request.getSession().setAttribute("currentStoreId", store.getId());
 		 if(store != null && store.getParent() == null){
 			 response.sendRedirect("/module/inventory/mainstore/mainPage");
 		 }else{
