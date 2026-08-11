@@ -47,7 +47,6 @@ jQuery("#totalAmountPayable").val(totalAmountPay);
 </script>
 
 <script type="text/javascript">
-
 function credit()
 {
 if(jQuery("#amountGiven").val()!="")
@@ -406,12 +405,6 @@ function calculateTotalDiscount() {
 		<td><input type="text" id="totalValue" name="totalValue"
 				size="11" value="0"/></td>
 		</tr>
-		<tr>
-    <td>Total Discountbbbb</td>
-    <td>
-        <input type="text" id="totalDiscount" readonly="true"/>
-    </td>
-</tr>
 		<tr>
 		<td>Total amount payable</td>
 		<td><input type="text" id="totalAmountPayable" name="totalAmountPayable"

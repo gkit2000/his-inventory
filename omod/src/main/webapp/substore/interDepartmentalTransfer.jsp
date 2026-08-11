@@ -8,32 +8,6 @@ redirect="/module/inventory/main.form"/>
 <%@ include file="../includes/js_css.jsp" %>
 
 <script type="text/javascript">
-function getAvailableQty(){
-
-    var drugId = $("#drugId").val();
-    var formulationId = $("#formulation").val();
-
-    if(drugId != "" && formulationId != ""){
-
-        jQuery.ajax({
-            type : "GET",
-            url  : "getAvailableQuantity.form",
-            data : {
-                drugId : drugId,
-                formulationId : formulationId
-            },
-            success : function(data){
-            alert("hiiiiii");
-
-                jQuery("#availableQty").val(jQuery.trim(data));
-
-            }
-        });
-
-    }
-
-}
-
 function confirmTransfer() {
 
     return confirm("Are you sure you want to transfer the selected drugs?");
@@ -146,7 +120,9 @@ Transfer Drug To Another Pharmacy
     <td>Formulation <em>*</em></td>
     <td>
         <div id="divFormulation">
-           
+         <select id="formulation" name="formulation">
+                <option value="">Please Select Formulation</option>
+            </select>
         </div>
     </td>
 </tr>
@@ -228,7 +204,7 @@ Transfer Slip
 
 <td>${item.drug.name}</td>
 
-<td>${item.formulation.name}</td>
+<td>${item.formulation.name}-${item.formulation.dozage}</td>
 
 <td>${item.quantity}</td>
 
@@ -246,10 +222,10 @@ Transfer Slip
        value="Save Transfer" onclick="return confirmTransfer();"
        class="ui-button ui-widget ui-state-default ui-corner-all"/>
 
-<input type="button"
-       value="Clear"
-       onclick="location.href='clearInterDepartmentTransfer.form';"
-       class="ui-button ui-widget ui-state-default ui-corner-all"/>
+<input type="submit"
+           name="clearTransfer"
+           value="Clear"
+           class="ui-button ui-widget ui-state-default ui-corner-all"/>
 
 </form>
 

@@ -43,7 +43,10 @@ public class CreatePatientIssueDrugController {
 				String totalValue=request.getParameter("totalValue");
 				Float totalValu=Float.parseFloat(totalValue);
 				String waiverPercentage=request.getParameter("waiverPercentage");
-				Float waiverPercentge=Float.parseFloat(waiverPercentage);
+				Float waiverPercentge=0.0f;
+				/*if (waiverPercentage != null && !waiverPercentage.trim().isEmpty()) {
+					waiverPercentge=Float.parseFloat(waiverPercentage);
+					}*/
 				String totalAmountPay=request.getParameter("totalAmountPayable");
 				Float totalAmountPy=Float.parseFloat(totalAmountPay);
 				System.out.println("cccccccccc");

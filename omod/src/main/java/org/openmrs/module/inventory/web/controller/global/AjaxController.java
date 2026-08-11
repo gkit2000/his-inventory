@@ -380,7 +380,6 @@ public class AjaxController {
 			model.addAttribute("formulations", formulations);
 			model.addAttribute("drugId", drug.getId());
 		}
-		System.out.println("OOOOOOOOOOOOOOOOOOOOOOO-"+drug.getId());
 		return "/module/inventory/autocomplete/formulationByDrugForIssue";
 	}
 	@RequestMapping("/module/inventory/specificationByItemForIssue.form")
@@ -448,7 +447,7 @@ public class AjaxController {
 	@RequestMapping("/module/inventory/processIssueDrug.form")
 	public String processIssueDrug( @RequestParam(value="action",required=false)  Integer action,Model model,HttpServletRequest request,
 			@RequestParam(value = "totalValue", required = false) Float totalValue,
-			@RequestParam(value = "waiverPercentage", required = false) Float waiverPercentage,
+			//@RequestParam(value = "waiverPercentage", required = false) Float waiverPercentage,
             @RequestParam(value= "waiverComment", required = false) String waiverComment,
 			@RequestParam(value = "totalAmountPayable", required = false) BigDecimal totalAmountPayable,
 			@RequestParam(value = "amountGiven", required = false) Integer amountGiven,
@@ -549,8 +548,8 @@ public class AjaxController {
 				transDetail.setTotalPrice(moneyUnitPrice);
 				
 				transDetail.setTotalAmount(totalValue);
-				transDetail.setWaiverPercentage(waiverPercentage);
-				Float waiverAmount=totalValue*waiverPercentage/100;
+				transDetail.setWaiverPercentage(pDetail.getDiscountPercent());
+				Float waiverAmount=totalValue*pDetail.getDiscountPercent()/100;
 				transDetail.setWaiverAmount(waiverAmount);
 				transDetail.setAmountPayable(totalAmountPayable);
 				//credit amount set

@@ -333,6 +333,7 @@ public class InterDepartmentalTransferController {
 	        	    issue.setQuantity(0);
 	        	    issue.setIssueQuantity(transferQty);
 	        	    issue.setCurrentQuantity(0);
+	        	    issue.setMrpPrice(parent.getMrpPrice());
 
 	        	    issue.setOpeningBalance(sourceRunningBalance);
 
@@ -381,6 +382,7 @@ public class InterDepartmentalTransferController {
 
 	        	    	receipt.setClosingBalance(closingQty);
 	        	    	 System.out.println("kkkkkkkkkkkkkkkkk-"+closingQty);
+	        	    	 receipt.setMrpPrice(parent.getMrpPrice());
 
 	        	    	destinationRunningBalance = closingQty;
 	        	    	
@@ -397,6 +399,17 @@ public class InterDepartmentalTransferController {
 	    }
 
 	    StoreSingleton.getInstance().getHash().remove(forwardParam);
+
+	    return "redirect:/module/inventory/interDepartmentalTransfer.form";
+	}
+	
+	@RequestMapping(params = "clearTransfer", method = RequestMethod.POST)
+	public String clearTransfer() {
+
+	    int userId = Context.getAuthenticatedUser().getId();
+
+	    StoreSingleton.getInstance().getHash()
+	            .remove("transferDrugDetail_" + userId);
 
 	    return "redirect:/module/inventory/interDepartmentalTransfer.form";
 	}

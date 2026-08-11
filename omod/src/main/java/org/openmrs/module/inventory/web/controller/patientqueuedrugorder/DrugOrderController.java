@@ -169,7 +169,7 @@ public class DrugOrderController {
 			@RequestParam(value = "totalValue", required = false) Float totalValue,
 			@RequestParam(value = "waiverPercentage", required = false) Float waiverPercentage,
             @RequestParam(value= "waiverComment", required = false) String waiverComment,
-			@RequestParam(value = "totalAmountPayable", required = false) BigDecimal totalAmountPayable,
+			@RequestParam(value = "totalAmountPayablee", required = false) BigDecimal totalAmountPayablee,
 			@RequestParam(value = "amountGiven", required = false) Integer amountGiven,
 			@RequestParam(value = "amountReturned", required = false) Integer amountReturned) throws Exception{
 		
@@ -186,7 +186,7 @@ public class DrugOrderController {
 		Integer quantity;
 		Integer noOfDays;
 		Integer avlId;
-		BigDecimal Discount;
+		BigDecimal discount;
 		String patientCategory = "";
 		String patientSubcategory = "";
 		HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
@@ -243,8 +243,14 @@ public class DrugOrderController {
 			quantity = Integer.parseInt(request.getParameter(avId
 					+ "_fQuantity"));
 			
-			Discount =  NumberUtils.createBigDecimal(request.getParameter(avId
-					+ "_fDiscount"));
+			String discountStr = request.getParameter(avId + "_fDiscount");
+
+			if (discountStr == null || discountStr.trim().equals("")
+			        || discountStr.trim().equals("undefined")) {
+			    discount = BigDecimal.ZERO;
+			} else {
+			    discount = NumberUtils.createBigDecimal(discountStr);
+			}
 			
 			frequencyName = request.getParameter(avId + "_fFrequencyName");
 			noOfDays = Integer.parseInt(request.getParameter(avId + "_fnoOfDays"));
@@ -297,27 +303,25 @@ public class DrugOrderController {
 			// moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(inventoryStoreDrugTransactionDetail.getVAT().divide(new BigDecimal(100))));
 			 transDetail.setTotalPrice(moneyUnitPrice);
 				
-			 transDetail.setTotalAmount(totalValue);
-			 transDetail.setWaiverPercentage(waiverPercentage);
+			 transDetail.setTotalAmount(moneyUnitPrice.floatValue());
 
-			 Float waiverAmount=null;
+			 transDetail.setWaiverPercentage(discount.floatValue());
+
+			 // Calculate discount amount for THIS drug only
+			 BigDecimal waiverAmountBD = moneyUnitPrice
+			         .multiply(discount)
+			         .divide(new BigDecimal("100"));
+
+			 transDetail.setWaiverAmount(waiverAmountBD.floatValue());
+
+			 // Amount payable for THIS drug
+			 BigDecimal drugAmountPayable = moneyUnitPrice.subtract(waiverAmountBD);
+
+			 transDetail.setAmountPayable(drugAmountPayable);
 			 
-			 if(waiverPercentage!=null)
-			 {
-			 waiverAmount=totalValue*waiverPercentage/100;
-			
-			 
-			 transDetail.setWaiverAmount(waiverAmount);
-			 }
-			 else
-			 {
-				 transDetail.setWaiverAmount(waiverAmount);
-			 }
-			 
-			 transDetail.setAmountPayable(totalAmountPayable);
 			 if(amountGiven==null)
 			 {
-			 transDetail.setAmountCredit(totalAmountPayable);
+			 transDetail.setAmountCredit(totalAmountPayablee);
 			 }
 			
 			 transDetail.setAmountGiven(amountGiven);

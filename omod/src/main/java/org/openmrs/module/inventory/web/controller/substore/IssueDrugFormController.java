@@ -87,17 +87,9 @@ public class IssueDrugFormController {
 		        .get("issueDrug_" + userId);
 		model.addAttribute("listPatientDetail", list);
 		model.addAttribute("issueDrugPatient", issueDrugPatient);
-		String discountPercentage = request.getParameter("discountPercentage");
-		System.out.println("xxxxxxxxxxxxxxxxxx-"+discountPercentage);
-
+	    
 		Float totalValu = 0f;
-		Float totalAmountPy = 0f;
-
-		Float discountPercentge = 0f;
-
-		if (discountPercentage != null && discountPercentage.trim().length() > 0) {
-			discountPercentge = Float.parseFloat(discountPercentage);
-		}
+		
 		if(list != null){
 
 		    for(InventoryStoreDrugPatientDetail lst : list){
@@ -119,10 +111,8 @@ public class IssueDrugFormController {
 		    }
 
 		}
-		totalAmountPy = totalValu - (totalValu * discountPercentge / 100);
 		model.addAttribute("total", totalValu);
-		model.addAttribute("totalAmountPayable", Math.round(totalAmountPy));
-		model.addAttribute("discountPercentage", discountPercentge);
+		model.addAttribute("totalAmountPayable", Math.round(totalValu));
 		
 		if(issueDrugPatient!=null){
 			HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
@@ -279,34 +269,57 @@ public class IssueDrugFormController {
 		} else {
 			listExt = new ArrayList<InventoryStoreDrugPatientDetail>(list);
 		}
+		
+		
 		for (InventoryStoreDrugTransactionDetail t : listReceiptDrug) {
-			Integer temp = NumberUtils.toInt(request.getParameter(t.getId() + ""), 0);
-			if (temp > 0) {
-				if (CollectionUtils.isNotEmpty(list)) {
-					for (int i = 0; i < list.size(); i++) {
-						InventoryStoreDrugPatientDetail dtail = list.get(i);
-						if (t.getId().equals(dtail.getTransactionDetail().getId())) {
-							listExt.remove(i);
-							temp += dtail.getQuantity();
-							break;
-						}
-					}
-				}
-			
-				InventoryStoreDrugPatientDetail issueDrugDetail = new InventoryStoreDrugPatientDetail();
-				issueDrugDetail.setTransactionDetail(t);
-				issueDrugDetail.setQuantity(temp);
-				listExt.add(issueDrugDetail);
-			}
+
+		    Integer temp = NumberUtils.toInt(
+		        request.getParameter(t.getId() + ""), 0
+		    );
+
+		    // Read individual discount from left-side AJAX form
+		    Float discount = NumberUtils.toFloat(
+		        request.getParameter("discount_" + t.getId()), 0f
+		    );
+
+		    System.out.println("Drug Transaction ID = " + t.getId());
+		    System.out.println("Individual Discount = " + discount);
+
+		    if (temp > 0) {
+
+		        if (CollectionUtils.isNotEmpty(list)) {
+		            for (int i = 0; i < list.size(); i++) {
+
+		                InventoryStoreDrugPatientDetail dtail = list.get(i);
+
+		                if (t.getId().equals(
+		                        dtail.getTransactionDetail().getId())) {
+
+		                    listExt.remove(i);
+		                    temp += dtail.getQuantity();
+		                    break;
+		                }
+		            }
+		        }
+
+		        InventoryStoreDrugPatientDetail issueDrugDetail =
+		                new InventoryStoreDrugPatientDetail();
+
+		        issueDrugDetail.setTransactionDetail(t);
+		        issueDrugDetail.setQuantity(temp);
+
+		        // Store individual discount for THIS drug
+		        issueDrugDetail.setDiscountPercent(discount);
+
+		        listExt.add(issueDrugDetail);
+		    }
 		}
+		
 		StoreSingleton.getInstance().getHash().put(fowardParam, listExt);
 		InventoryStoreDrugPatient issueDrugPatient = (InventoryStoreDrugPatient) StoreSingleton.getInstance().getHash()
 		        .get("issueDrug_" + userId);
 		model.addAttribute("issueDrugPatient", issueDrugPatient);
 		//model.addAttribute("listPatientDetail", list);
-		String discountPercent=request.getParameter("waiverPercentage");
-		Float discountPercentage=Float.parseFloat(discountPercent);
-		System.out.println("gggggggggggggggggg-"+discountPercentage);
-		return "redirect:/module/inventory/subStoreIssueDrugForm.form?discountPercentage=" + discountPercentage;
+		return "redirect:/module/inventory/subStoreIssueDrugForm.form";
 	}
 }

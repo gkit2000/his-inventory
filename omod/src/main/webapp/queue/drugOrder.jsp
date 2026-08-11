@@ -138,6 +138,7 @@ function issueDrugOrder(listOfDrugQuantity) {
    var noOfDays=document.getElementById(availableIdArr[i].toString()+'_noOfDays').value;
    var comments=document.getElementById(availableIdArr[i].toString()+'_comments').value;
    var price=document.getElementById(availableIdArr[i].toString()+'_price').value;
+   var discount = 0;
    var batch=document.getElementById(availableIdArr[i].toString()+'_batchNo').value;
    var expire=document.getElementById(availableIdArr[i].toString()+'_dateexpiry').value;
    //jQuery("#qty"+drugId).append("<span style='margin:5px;'>" + totalValue + "</span>");
@@ -153,14 +154,14 @@ function issueDrugOrder(listOfDrugQuantity) {
 
    var avaiableId=availableIdArr[i];
    var deleteString = 'deleteInput(\"'+avaiableId+'\")';
-   var deleteString = 'deleteInput(\"'+avaiableId+'\")';
    var htmlText =  "<div id='com_"+avaiableId+"_div'>"
 	       	 +"<input id='"+avaiableId+"_fName'  name='"+avaiableId+"_fName' type='text' size='20' value='"+drugName+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fFormulationName'  name='"+avaiableId+"_fFormulationName' type='text' size='11' value='"+formulation+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fbatchNo'  name='"+avaiableId+"_fbatchNo' type='hidden' size='11' value='"+batch+"'  readonly='readonly'/>&nbsp;"
-	       	+"<input id='"+avaiableId+"_fdateexpiry'  name='"+avaiableId+"_fdateexpiry' type='hidden'  size='11' value='"+expire+"'  readonly='readonly'/>&nbsp;"
+	       	 +"<input id='"+avaiableId+"_fdateexpiry'  name='"+avaiableId+"_fdateexpiry' type='hidden'  size='11' value='"+expire+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fQuantity'  name='"+avaiableId+"_fQuantity' type='text' size='3' value='"+quant+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fPrice'  name='"+avaiableId+"_fPrice' type='text' size='3' type='hidden' value='"+price+"'  readonly='readonly'/>&nbsp;"
+	       	 +"<input type='text' " +"id='"+avaiableId+"_fdiscount' " +"name='"+avaiableId+"_fdiscount' " +"value='0' size='6' " +"onkeyup='calculateDrugDiscount("+avaiableId+");' /> %"
 	       	 +"<input id='"+avaiableId+"_fFormulationId'  name='"+avaiableId+"_fFormulationId' type='hidden' value='"+formulationId+"'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fAvaiableId'  name='avaiableId' type='hidden' value='"+avaiableId+"'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fFrequencyName'  name='"+avaiableId+"_fFrequencyName' type='hidden' value='"+frequencyName+"'/>&nbsp;"
@@ -181,6 +182,7 @@ function issueDrugOrder(listOfDrugQuantity) {
   jQuery("#"+drugName).hide();
    jQuery("#processDrugOrder").hide();
     }
+    calculateAllDrugDiscounts();
   }
   	if (preTotal == null){
 		var totalText =  "<div id='com_"+avaiableId+"_div'>"
@@ -279,91 +281,225 @@ jQuery("#processDrugOrder").hide();
 <script type="text/javascript">
 function finishDrugOrder() {
 
-var drugProcessName=document.getElementById("drugProcessName");
-if (drugProcessName==null){
-alert("Please select at least one drug");
-return false;
+    var drugProcessName = document.getElementById("drugProcessName");
+
+    // 1. At least one drug selected
+    if (drugProcessName == null) {
+        alert("Please select at least one drug");
+        return false;
+    }
+
+    // 2. Validate discount of every selected drug
+    var discountFields = jQuery("input[id$='_fdiscount']");
+
+    for (var i = 0; i < discountFields.length; i++) {
+
+        var discountField = jQuery(discountFields[i]);
+        var discount = discountField.val();
+
+        if (discount == null || discount == "") {
+            alert("Please enter Discount Percentage");
+            discountField.focus();
+            return false;
+        }
+
+        if (isNaN(discount) ||
+            parseFloat(discount) < 0 ||
+            parseFloat(discount) > 100) {
+
+            alert("Please enter correct Discount Percentage");
+            discountField.focus();
+            return false;
+        }
+    }
+
+    /*
+    if(jQuery("#waiverPercentage").val()>0 &&
+       jQuery("#waiverComment").val()==""){
+        alert("Please enter comment");
+        return false;
+    }
+    */
+
+    // 3. Amount Given validation
+    if (document.getElementById("amountGiven").disabled != true) {
+
+        if (jQuery("#amountGiven").val() == "") {
+            alert("Please enter Amount Given");
+            return false;
+        }
+
+        if (jQuery("#amountGiven").val() < 0 ||
+            !StringUtils.isDigit(jQuery("#amountGiven").val())) {
+
+            alert("Please enter correct Amount Given");
+            return false;
+        }
+
+        var amgiv = jQuery("#amountGiven").val();
+        var tamp = jQuery("#totalAmountPayable").val();
+
+        if (parseFloat(amgiv) - parseFloat(tamp) < 0) {
+            alert("Amount Given must be greater than Total Amount Payable");
+            return false;
+        }
+
+        if (jQuery("#amountReturned").val() == "") {
+            alert("Please enter Amount Returned");
+            return false;
+        }
+
+        if (jQuery("#amountReturned").val() < 0 ||
+            !StringUtils.isDigit(jQuery("#amountReturned").val())) {
+
+            alert("Please enter correct Amount Returned");
+            return false;
+        }
+    }
+
+    // 4. Confirmation
+    if (confirm("Are you sure?")) {
+
+        jQuery("#subm").attr("disabled", "disabled");
+
+        printDiv2();
+
+        return true;
+    }
+
+    return false;
 }
 
-if(jQuery("#waiverPercentage").val() ==""){
-alert("Please enter Discount Percentage");
-return false;
+function calculateAllDrugDiscounts() {
+
+    var totalPayable = 0;
+
+    var discountFields =
+        document.querySelectorAll("input[id$='_fdiscount']");
+
+    for (var i = 0; i < discountFields.length; i++) {
+
+        var discountField = discountFields[i];
+
+        var id = discountField.id.replace("_fdiscount", "");
+
+        var qtyField = document.getElementById(id + "_fQuantity");
+        var priceField = document.getElementById(id + "_fPrice");
+
+        if (!qtyField || !priceField) {
+            continue;
+        }
+
+        var qty = parseFloat(qtyField.value) || 0;
+        var price = parseFloat(priceField.value) || 0;
+        var discount = parseFloat(discountField.value) || 0;
+
+        var drugTotal = qty * price;
+        var discountAmount = (drugTotal * discount) / 100;
+
+        totalPayable += drugTotal - discountAmount;
+    }
+
+    // Set field value
+    jQuery("#totalAmountPayablee").val(Math.round(totalPayable));
+	amountReturnedToPatient();
 }
 
-if(jQuery("#waiverPercentage").val() < 0 ){
-alert("Please enter correct Discount Percentage");
-return false;
-}
+function calculateDrugDiscount(avaiableId) {
 
-                
-/*if(jQuery("#waiverPercentage").val()>0 && jQuery("#waiverComment").val() ==""){
-alert("Please enter comment");
-return false;
-}
-*/
+    var totalPayable = 0;
 
-if(document.getElementById("amountGiven").disabled != true)
-	{
-if(jQuery("#amountGiven").val() ==""){
-alert("Please enter Amount Given");
-return false;
-}
+    // Get all dynamically created discount fields
+    var discountFields = jQuery("input[id$='_fdiscount']");
 
+    for (var i = 0; i < discountFields.length; i++) {
 
-if(jQuery("#amountGiven").val() < 0 || !StringUtils.isDigit(jQuery("#amountGiven").val())){
-alert("Please enter correct Amount Given");
-return false;
-}
-var amgiv=jQuery("#amountGiven").val();
-var tamp=jQuery("#totalAmountPayable").val();
+        var discountField = jQuery(discountFields[i]);
 
-if(amgiv-tamp < 0 ){
-alert("Amount Given must be greater than Total Amount Payable");
-return false;
-}
+        var id = discountField.attr("id").replace("_fdiscount", "");
 
-if(jQuery("#amountReturned").val() ==""){
-alert("Please enter Amount Returned");
-return false;
-}
+        var qtyField = jQuery("#" + id + "_fQuantity");
+        var priceField = jQuery("#" + id + "_fPrice");
 
-if(jQuery("#amountReturned").val() < 0 || !StringUtils.isDigit(jQuery("#amountReturned").val())){
-alert("Please enter correct Amount Returned");
-return false;
-}
-	}
-if(confirm("Are you sure?")){
-jQuery("#subm").attr("disabled", "disabled");
-printDiv2();
-return true;
-}
-if(confirm("Are you sure?")){
-	jQuery("#sub").attr("disabled", "disabled");
-	printDiv2();
-	return true;
-	}
-return false;
+        if (qtyField.length == 0 || priceField.length == 0) {
+            continue;
+        }
+
+        var qty = parseFloat(qtyField.val());
+        var price = parseFloat(priceField.val());
+        var discount = parseFloat(discountField.val());
+
+        // Avoid NaN
+        if (isNaN(qty)) {
+            qty = 0;
+        }
+
+        if (isNaN(price)) {
+            price = 0;
+        }
+
+        if (isNaN(discount)) {
+            discount = 0;
+        }
+
+        // Validate discount
+        if (discount < 0) {
+            discount = 0;
+            discountField.val(0);
+        }
+
+        if (discount > 100) {
+            discount = 100;
+            discountField.val(100);
+        }
+
+        var drugTotal = qty * price;
+
+        var discountAmount = drugTotal * discount / 100;
+
+        var drugPayable = drugTotal - discountAmount;
+
+        totalPayable = totalPayable + drugPayable;
+    }
+
+    jQuery("#totalAmountPayablee").val(Math.round(totalPayable));
+	amountReturnedToPatient();
 }
 </script>
 
 <script type="text/javascript">
-function totalAmountToPay(){
-var total=jQuery("#totalValue").val();
-var waiverPercentage=jQuery("#waiverPercentage").val();
-var waiverAmount=(total*waiverPercentage)/100;
-var totalAmountPay=total-(total*waiverPercentage)/100;
-var tap=Math.round(totalAmountPay);
-jQuery("#totalAmountPayable").val(tap);
-var amountGiven=jQuery("#amountGiven").val();
-var amountReturned=amountGiven-tap;
-jQuery("#amountReturned").val(amountReturned);
-}
+function amountReturnedToPatient() {
 
-function amountReturnedToPatient(){
-var totalAmountToPay=jQuery("#totalAmountPayable").val();
-var amountGiven=jQuery("#amountGiven").val();
-var amountReturned=amountGiven-totalAmountToPay;
-jQuery("#amountReturned").val(amountReturned);
+    var amountGivenField = jQuery("#amountGiven");
+    var totalAmountPayableField = jQuery("#totalAmountPayablee");
+    var amountReturnedField = jQuery("#amountReturned");
+
+    if (amountGivenField.length == 0 ||
+        totalAmountPayableField.length == 0 ||
+        amountReturnedField.length == 0) {
+        return;
+    }
+
+    var amountGiven = parseFloat(amountGivenField.val());
+    var totalAmountPayable = parseFloat(totalAmountPayableField.val());
+
+    // Avoid NaN
+    if (isNaN(amountGiven)) {
+        amountGiven = 0;
+    }
+
+    if (isNaN(totalAmountPayable)) {
+        totalAmountPayable = 0;
+    }
+
+    var amountReturned = amountGiven - totalAmountPayable;
+
+    // Don't show negative returned amount
+    if (amountReturned < 0) {
+        amountReturned = 0;
+    }
+
+    amountReturnedField.val(Math.round(amountReturned));
 }
 </script>
 
@@ -485,20 +621,13 @@ jQuery("#amountReturned").val(amountReturned);
 			<input type='text' size="11" value='Formulation' readonly="readonly" />
 			<input type='text' size="3" value='Qty' readonly="readonly" />
 			<input type='text' size="3" value='MRP' readonly="readonly" />
+			<input type="text" size="6" value="Discount %" readonly="readonly" />
 			<hr />	
 			</div>
 			
-		<div id="waiverDiv"
-			style="background: #f6f6f6; border: 1px #808080 solid; padding: 0.3em; margin: 0.3em 0em; width: 100%;">
-			<div>
-			Discount&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-			&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-			<input type="text" id="waiverPercentage" name="waiverPercentage"
-				size="11" value="0" class="cancelDraggable" onkeyup="totalAmountToPay();"/>%
-		</div>
 		<div>
 		Total amount payable&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
-		<input type="text" id="totalAmountPayable" name="totalAmountPayable"
+				<input type="text" id="totalAmountPayablee" name="totalAmountPayablee"
 				size="11" readOnly="true"/>
 		</div>
 		<div>

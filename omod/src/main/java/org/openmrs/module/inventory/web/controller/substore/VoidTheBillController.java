@@ -97,19 +97,49 @@ public class VoidTheBillController {
 			 @RequestParam(value="voidedReason",required=false)  String voidedReason,
 			 @RequestParam(value="cashReturned",required=false)  Integer cashReturned) {
 	InventoryCommonService inventoryCommonService = (InventoryCommonService) Context.getService(InventoryCommonService.class);
+	List<InventoryStoreDrugTransactionDetail> inventoryStoreDrugTransactionDetailList = new ArrayList<>();
+	
+	String actionType = request.getParameter("actionType");
+
+	if("PARTIAL".equals(actionType)){
+
+        String[] ids = request.getParameterValues("selectedTranDetail");
+
+        if (ids != null) {
+
+            for (String id : ids) {
+
+                Integer tranDetailId = Integer.parseInt(id);
+
+                Integer returnQty =
+                        Integer.parseInt(request.getParameter("returnQty" + id));
+
+                InventoryStoreDrugTransactionDetail isdtd =
+                	    inventoryCommonService.getInventoryStoreDrugTransactionDetail(tranDetailId);
+                inventoryStoreDrugTransactionDetailList.add(isdtd);
+            }
+        }
+	}
+	
 	InventoryService inventoryService = (InventoryService) Context.getService(InventoryService.class);
 	InventoryStoreDrugPatient inventoryStoreDrugPatient=inventoryCommonService.getInventoryStoreDrugPatient(billNo);
-	List<InventoryStoreDrugPatientDetail> inventoryStoreDrugPatientDetailList=inventoryCommonService.getInventoryStoreDrugPatientDetail(inventoryStoreDrugPatient);
+	if("FULL".equals(actionType)){
+		inventoryStoreDrugPatient.setVoided(1);
+		List<InventoryStoreDrugPatientDetail> inventoryStoreDrugPatientDetailList=inventoryCommonService.getInventoryStoreDrugPatientDetail(inventoryStoreDrugPatient);
+	for(InventoryStoreDrugPatientDetail isdpd:inventoryStoreDrugPatientDetailList){
+		InventoryStoreDrugTransactionDetail isdtd=inventoryCommonService.getInventoryStoreDrugTransactionDetail(isdpd.getTransactionDetail().getId());
+		inventoryStoreDrugTransactionDetailList.add(isdtd);
+	}
+	}
 	
 	InventoryStore store = inventoryService.getStoreByCollectionRole(new ArrayList<Role>(Context.getAuthenticatedUser().getAllRoles()));
 	//totalAmountAferVoid will be zero as complete bill is voided
 	Float totalAmountAferVoid=0f;
 	Float waiverAmountAferVoid=0f;
-	for(InventoryStoreDrugPatientDetail isdpd:inventoryStoreDrugPatientDetailList){
+	for(InventoryStoreDrugTransactionDetail isdtd:inventoryStoreDrugTransactionDetailList){
 		InventoryStoreDrugTransaction inventoryStoreDrugTransaction=new InventoryStoreDrugTransaction();
 		InventoryStoreDrugTransactionDetail inventoryStoreDrugTransactionDetail=new InventoryStoreDrugTransactionDetail();
-		InventoryStoreDrugTransactionDetail isdtd=inventoryCommonService.getInventoryStoreDrugTransactionDetail(isdpd.getTransactionDetail().getId());
-		String quantity = request.getParameter("quantity"+isdpd.getTransactionDetail().getId());
+		String quantity = request.getParameter("quantity"+isdtd.getId());
      
         if (quantity != null) {
         Integer quantityInInteger=Integer.parseInt(quantity);
@@ -167,15 +197,15 @@ public class VoidTheBillController {
 		InventoryStoreDrugTransactionDetail isdtdcurrentQuantity=isdtd.getParent();
 		isdtdcurrentQuantity.setCurrentQuantity(currentQuantity+quantityInInteger);
 		inventoryService.saveOrUpdateStoreDrugTransactionDetail(isdtdcurrentQuantity);
-		
-		inventoryStoreDrugPatient.setVoided(1);
-		inventoryStoreDrugPatient.setVoidedDate(new Date());
-		inventoryStoreDrugPatient.setVoidedBy(Context.getAuthenticatedUser().getGivenName());
-		inventoryStoreDrugPatient.setVoidedReason(voidedReason);
-		inventoryService.saveStoreDrugPatient(inventoryStoreDrugPatient);
          }
         }
 	}
+	
+	inventoryStoreDrugPatient.setVoidedDate(new Date());
+	inventoryStoreDrugPatient.setVoidedBy(Context.getAuthenticatedUser().getGivenName());
+	inventoryStoreDrugPatient.setVoidedReason(voidedReason);
+	inventoryService.saveStoreDrugPatient(inventoryStoreDrugPatient);
+	
 	return "/module/inventory/substore/voidTheBillClose";
 }
 }

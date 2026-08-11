@@ -1243,22 +1243,9 @@ public class HibernateInventoryDAO implements InventoryDAO {
 		}
 		criteria.addOrder(Order.asc("transactionDetail.dateExpiry"));
 		
-		List<InventoryStoreDrugTransactionDetail> l = criteria.list();
+		List<InventoryStoreDrugTransactionDetail> list = criteria.list();
 
-		Map<String, InventoryStoreDrugTransactionDetail> uniqueBatch = new LinkedHashMap<String, InventoryStoreDrugTransactionDetail>();
-
-		for (InventoryStoreDrugTransactionDetail d : l) {
-
-		    String key = d.getBatchNo() + "_" + d.getDateExpiry();
-		    System.out.println("xxxxxxxxxxxxxxx-"+d.getId());
-		    System.out.println("yyyyyyyyyyyyyyy-"+d.getQuantity());
-
-		    if (!uniqueBatch.containsKey(key)) {
-		        uniqueBatch.put(key, d);
-		    }
-		}
-
-		return new ArrayList<InventoryStoreDrugTransactionDetail>(uniqueBatch.values());
+		return list;
 	}
 	
 	public List<InventoryStoreDrugTransactionDetail> listStoreDrugTransactionDetail(Integer storeId, Integer drugId,
