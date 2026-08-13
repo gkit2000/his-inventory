@@ -239,7 +239,7 @@ public class InterDepartmentalTransferController {
 	        issueTxn.setCreatedBy(Context.getAuthenticatedUser().getGivenName());
 	        issueTxn.setCreatedOn(now);
 	        issueTxn.setStatus(InventoryStoreDrugTransaction.STATUS_DONE);
-	        issueTxn.setTypeTransaction(1);
+	        issueTxn.setTypeTransaction(2);
 	        issueTxn.setDescription(
 	                "Inter Department Transfer To "
 	                        + destinationStore.getName());
@@ -255,7 +255,7 @@ public class InterDepartmentalTransferController {
 	        receiptTxn.setCreatedBy(Context.getAuthenticatedUser().getGivenName());
 	        receiptTxn.setCreatedOn(now);
 	        receiptTxn.setStatus(InventoryStoreDrugTransaction.STATUS_DONE);
-	        receiptTxn.setTypeTransaction(0);
+	        receiptTxn.setTypeTransaction(1);
 	        receiptTxn.setDescription(
 	                "Received From "
 	                        + sourceStore.getName());

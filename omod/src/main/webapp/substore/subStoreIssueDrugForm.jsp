@@ -366,7 +366,7 @@ function calculateTotalDiscount() {
 				<th><spring:message code="inventory.drug.formulation" /></th>
 				<th><spring:message code="inventory.receiptDrug.quantity" /></th>
 				<th><spring:message code="inventory.receiptDrug.MRP" /></th>
-				<th>Discountaaa %</th>
+				<th>Discount %</th>
                 <th>Total</th>
 			</tr>
 			<c:choose>

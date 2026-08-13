@@ -78,10 +78,8 @@
 		<input type="button" value="Void Bill"
 					onclick="voidTheBill(${issue.id},${issue.voided});" />
 		</td>
-		<c:if test="${issue.voided==1}">
 		<td>${issue.voidedReason}</td>
 		<td>${issue.voidedBy}</td>
-		</c:if>
 		</tr>
 	</c:forEach>
 	</c:when>
