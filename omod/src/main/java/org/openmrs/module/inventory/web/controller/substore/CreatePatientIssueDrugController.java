@@ -49,7 +49,6 @@ public class CreatePatientIssueDrugController {
 					}*/
 				String totalAmountPay=request.getParameter("totalAmountPayable");
 				Float totalAmountPy=Float.parseFloat(totalAmountPay);
-				System.out.println("cccccccccc");
 				return "redirect:/module/inventory/subStoreIssueDrugForm.form?totalValue=" + totalValu + "&waiverPercentage=" + waiverPercentge +"&totalAmountPayable=" + totalAmountPy;
 			}
 			

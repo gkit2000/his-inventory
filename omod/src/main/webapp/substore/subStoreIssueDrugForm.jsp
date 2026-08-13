@@ -403,7 +403,7 @@ function calculateTotalDiscount() {
 		<tr>
 		<td>Total</td>
 		<td><input type="text" id="totalValue" name="totalValue"
-				size="11" value="0"/></td>
+				size="11" value="0" readOnly="true"/></td>
 		</tr>
 		<tr>
 		<td>Total amount payable</td>

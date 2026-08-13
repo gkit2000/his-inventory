@@ -89,30 +89,34 @@ public class IssueDrugFormController {
 		model.addAttribute("issueDrugPatient", issueDrugPatient);
 	    
 		Float totalValu = 0f;
-		
-		if(list != null){
+		Float totalAmountPayable = 0f;
 
-		    for(InventoryStoreDrugPatientDetail lst : list){
+		if (list != null) {
+
+		    for (InventoryStoreDrugPatientDetail lst : list) {
 
 		        Float unitPrice = lst.getTransactionDetail().getMrpPrice().floatValue();
 		        Integer quantity = lst.getQuantity();
 
 		        Float discount = 0f;
 
-		        if(lst.getDiscountPercent() != null){
+		        if (lst.getDiscountPercent() != null) {
 		            discount = lst.getDiscountPercent();
 		        }
 
 		        Float total = quantity * unitPrice;
 
+		        // Actual amount BEFORE discount
+		        totalValu += total;
+
+		        // Amount AFTER individual drug discount
 		        Float discountedTotal = total - (total * discount / 100);
-
-		        totalValu = totalValu + discountedTotal;
+		        totalAmountPayable += discountedTotal;
 		    }
-
 		}
+
 		model.addAttribute("total", totalValu);
-		model.addAttribute("totalAmountPayable", Math.round(totalValu));
+		model.addAttribute("totalAmountPayable", Math.round(totalAmountPayable));
 		
 		if(issueDrugPatient!=null){
 			HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
@@ -150,7 +154,6 @@ public class IssueDrugFormController {
 		}
 		String hospitalName=GlobalPropertyUtil.getString("hospitalcore.hospitalParticularName", "Kollegal DVT Hospital");
 		model.addAttribute("hospitalName", hospitalName);
-		System.out.println("dddddddddddddddd");
 		
 	
 		return "/module/inventory/substore/subStoreIssueDrugForm";
