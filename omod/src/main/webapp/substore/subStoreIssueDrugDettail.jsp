@@ -114,10 +114,13 @@ jQuery("#cashheaders").show();
 				<th style="text-align: center;">&nbsp;</th>
 				-->
 				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.MRP" /></th>
-				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.total" /></th>
 				<!--
 				<th style="text-align: center;">&nbsp;</th>
 				-->
+				<th style="text-align: center;">Total</th>
+				<th style="text-align: center;">Discount %</th>
+				<th style="text-align: center;">Discount</th>
+                <th style="text-align: center;">Total after Discount</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -141,7 +144,18 @@ jQuery("#cashheaders").show();
 							</c:choose>
 							 -->
 							<td style="text-align: center;">${issue.transactionDetail.mrpPrice}</td>
-						    <td  style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.transactionDetail.mrpPrice*issue.quantity}</td>
+						    <td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
+							<td style="text-align: center;">
+    <span class="rowDiscount">
+        ${issue.discountPercent != null ? issue.discountPercent : 0}
+    </span> %
+</td>
+                            <td style="text-align: center;">${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
+                            <td style="text-align: center;">
+                            <span class="rowTotal">
+                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                            </span>
+                         </td>
 						   <!--
 						    <c:choose>
 						    <c:when test="${issue.transactionDetail.voided==1}"><td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.transactionDetail.quantityAfterReturn}</td></c:when>
@@ -164,7 +178,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td style="text-align: center;">Total amount</td>
+<td colspan="10" style="text-align: center;">Total amount</td>
 <td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
 </tr>
 <tr>
@@ -178,8 +192,6 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td style="text-align: center;">Discount %</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discount}0</td>
 </tr>
 <tr>
 	<td style="text-align: center;">&nbsp;</td>
@@ -192,7 +204,7 @@ jQuery("#cashheaders").show();
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	 -->
-	<td style="text-align: center;">DiscountAmount</td>
+	<td colspan="10" style="text-align: center;">DiscountAmount</td>
 	<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
 </tr>
 <tr>
@@ -206,7 +218,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td style="text-align: center;">Total amount payable</td>
+<td colspan="10" style="text-align: center;">Total amount payable</td>
 <td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
 </tr>
 <tr>
@@ -220,7 +232,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td id="amtgven" style="text-align: center;">Amount Given</td>
+<td id="amtgven" colspan="10" style="text-align: center;">Amount Given</td>
 <td id="amtgiven" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountGiven}.00</td>
 </tr>
 <tr>
@@ -234,7 +246,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td id="amtretrn" style="text-align: center;">Amount Returned</td>
+<td id="amtretrn" colspan="10" style="text-align: center;">Amount Returned</td>
 <td id="amtreturn" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountReturned}.00</td>
 </tr>
 <tr>
@@ -331,7 +343,10 @@ jQuery("#cashheaders").show();
                 <th style="text-align: center;"><spring:message code="inventory.receiptDrug.dateExpiry" /></th>
 				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.quantity" /></th>
 				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.MRP" /></th>
-				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.total" /></th>
+				<th style="text-align: center;">Total</th>
+				<th style="text-align: center;">Discount %</th>
+				<th style="text-align: center;">Discount</th>
+                <th style="text-align: center;">Total after Discount</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -349,6 +364,18 @@ jQuery("#cashheaders").show();
 								type="textbox" /></td>
 							<td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.quantity}</td>
 							<td style="text-align: center;">${issue.transactionDetail.mrpPrice}</td>
+							 <td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
+							<td style="text-align: center;">
+    <span class="rowDiscount">
+        ${issue.discountPercent != null ? issue.discountPercent : 0}
+    </span> %
+</td>
+                            <td style="text-align: center;">${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
+                            <td style="text-align: center;">
+                            <span class="rowTotal">
+                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                            </span>
+                         </td>
 							<td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 						    <input type="hidden" id="test1" value="${issue.transactionDetail.amountCredit}"/>
 						</tr>
@@ -362,27 +389,17 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Total amount</td>
+<td colspan="10" style="text-align: center;">Total amount</td>
 <td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
 </tr>
 <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Discount %</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discount}0</td>
-</tr>
-<tr>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">DiscountAmount</td>
+	<td colspan="10" style="text-align: center;">DiscountAmount</td>
 	<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
 </tr>
 <tr>
@@ -392,7 +409,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Total amount payable</td>
+<td colspan="10" style="text-align: center;">Total amount payable</td>
 <td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
 </tr>
 <tr>
@@ -409,7 +426,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
-<td id="amtgvens" style="text-align: center;">Amount Given</td>
+<td id="amtgvens" colspan="10" style="text-align: center;">Amount Given</td>
 <td id="amtgivens" style="text-align: center;">${amountGiven}.00</td>
 </tr>
 <tr>
@@ -420,7 +437,7 @@ jQuery("#cashheaders").show();
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
-<td id="amtretrns" style="text-align: center;">Amount Returned</td>
+<td id="amtretrns" colspan="10" style="text-align: center;">Amount Returned</td>
 <td id="amtreturns" style="text-align: center;">${amountReturned}.00</td>
 </tr>-->
 </tbody>

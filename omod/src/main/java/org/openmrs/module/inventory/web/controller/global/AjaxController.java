@@ -573,11 +573,14 @@ public class AjaxController {
 				
 			}
 			
-			StoreSingleton.getInstance().getHash().remove(fowardParam);
-			StoreSingleton.getInstance().getHash().remove("issueDrug_"+userId);
+			//StoreSingleton.getInstance().getHash().remove(fowardParam);
+			//StoreSingleton.getInstance().getHash().remove("issueDrug_"+userId);
 		}
+		StoreSingleton.getInstance().getHash().remove(fowardParam);
+		StoreSingleton.getInstance().getHash().remove("issueDrug_"+userId);
 		
-		return "redirect:/module/inventory/subStoreIssueDrugList.form";
+		//return "redirect:/module/inventory/subStoreIssueDrugList.form";
+		return "redirect:/module/inventory/subStoreIssueDrugForm.form";
 	}
 	
 	@RequestMapping("/module/inventory/processIssueDrugAccount.form")

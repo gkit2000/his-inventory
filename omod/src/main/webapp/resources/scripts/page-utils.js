@@ -353,23 +353,19 @@ PURCHASE={
 		printDiv : function ()
 		{
 		  	var totalValue=jQuery("#totalValue").val();
-			var waiverPercentage=jQuery("#waiverPercentage").val();
-			var waiverAmount=parseFloat(Math.round(((totalValue*waiverPercentage)/100) * 100) / 100).toFixed(2);
+			var totalDiscount=jQuery("#totalDiscount").val();
 			var totalAmountPayable=jQuery("#totalAmountPayable").val();
 			var waiverComment=jQuery("#waiverComment").val();
 			var amountGiven=jQuery("#amountGiven").val();
 			var amountReturned=jQuery("#amountReturned").val();
 			jQuery("#printableTotal").empty();
-			jQuery("#printableDiscount").empty();
-			jQuery("#printableDiscountAmount").empty();
 			jQuery("#printableDiscountComment").empty();
 			jQuery("#printableTotalAmountPayable").empty();
 			jQuery("#printableTotalPayable").empty();
 			jQuery("#printableGiven").empty();
 			jQuery("#printableAmountReturned").empty();
 		    jQuery("#printableTotal").append("<span style='margin:5px;'>" + totalValue + "</span>");
-		    jQuery("#printableDiscount").append("<span style='margin:5px;'>" + waiverPercentage + "</span>");
-			jQuery("#printableDiscountAmount").append("<span style='margin:5px;'>" + waiverAmount + "</span>");
+			jQuery("#printableDiscountAmount").append("<span style='margin:5px;'>" + totalDiscount + "</span>");
 			jQuery("#printableDiscountComment").append("<span style='margin:5px;'>" + waiverComment + "</span>");
 		    jQuery("#printableTotalAmountPayable").append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
 		    jQuery("#printableTotalPayable").append("<span style='margin:5px;'>" + toWords(totalAmountPayable) + "</span>");
@@ -940,7 +936,7 @@ ISSUE={
 					jQuery("#bttclear").attr("disabled","disabled");
 					jQuery("#bttprint").attr("disabled","disabled");
 					var totalValue=jQuery("#totalValue").val();
-					var waiverPercentage=jQuery("#waiverPercentage").val();
+					//var waiverPercentage=jQuery("#waiverPercentage").val();
 					var totalAmountPayable=jQuery("#totalAmountPayable").val();
 					var waiverComment=jQuery("#waiverComment").val();
 					var amountGiven=jQuery("#amountGiven").val();

@@ -90,6 +90,8 @@ public class IssueDrugFormController {
 	    
 		Float totalValu = 0f;
 		Float totalAmountPayable = 0f;
+		Float discountedTotal = 0f;
+		Float totalDiscount = 0f;
 
 		if (list != null) {
 
@@ -110,12 +112,18 @@ public class IssueDrugFormController {
 		        totalValu += total;
 
 		        // Amount AFTER individual drug discount
-		        Float discountedTotal = total - (total * discount / 100);
+		        discountedTotal = total - (total * discount / 100);
+		        
+		        //total dicount
+		        totalDiscount = totalDiscount+total * discount / 100;
+		        
 		        totalAmountPayable += discountedTotal;
 		    }
 		}
 
 		model.addAttribute("total", totalValu);
+		model.addAttribute("discountedTotal", discountedTotal);
+		model.addAttribute("totalDiscount", totalDiscount);
 		model.addAttribute("totalAmountPayable", Math.round(totalAmountPayable));
 		
 		if(issueDrugPatient!=null){

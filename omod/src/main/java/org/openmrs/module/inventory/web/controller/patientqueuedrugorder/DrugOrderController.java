@@ -187,6 +187,8 @@ public class DrugOrderController {
 		Integer noOfDays;
 		Integer avlId;
 		BigDecimal discount;
+		BigDecimal calculatedTotalValue = BigDecimal.ZERO;
+		BigDecimal calculatedTotalAmountPayable = BigDecimal.ZERO;
 		String patientCategory = "";
 		String patientSubcategory = "";
 		HospitalCoreService hcs = Context.getService(HospitalCoreService.class);
@@ -255,6 +257,9 @@ public class DrugOrderController {
 			frequencyName = request.getParameter(avId + "_fFrequencyName");
 			noOfDays = Integer.parseInt(request.getParameter(avId + "_fnoOfDays"));
 			
+			discount = NumberUtils.createBigDecimal(
+				    request.getParameter(avId + "_fdiscount"));
+			
 			
 			Concept fCon = Context.getConceptService().getConcept(frequencyName);
 			
@@ -299,25 +304,32 @@ public class DrugOrderController {
 			 transDetail.setNoOfDays(noOfDays);
 			 transDetail.setComments(waiverComment);
 			
-			 BigDecimal moneyUnitPrice = inventoryStoreDrugTransactionDetail.getMrpPrice().multiply(new BigDecimal(quantity));
-			// moneyUnitPrice = moneyUnitPrice.add(moneyUnitPrice.multiply(inventoryStoreDrugTransactionDetail.getVAT().divide(new BigDecimal(100))));
-			 transDetail.setTotalPrice(moneyUnitPrice);
+			 BigDecimal moneyUnitPrice =
+				        inventoryStoreDrugTransactionDetail.getMrpPrice()
+				        .multiply(new BigDecimal(quantity));
+
+				BigDecimal discountAmount = moneyUnitPrice
+				        .multiply(discount)
+				        .divide(new BigDecimal(100));
+
+				BigDecimal drugAmountPayable =
+				        moneyUnitPrice.subtract(discountAmount);
 				
-			 transDetail.setTotalAmount(moneyUnitPrice.floatValue());
+				calculatedTotalValue =
+				        calculatedTotalValue.add(moneyUnitPrice);
 
-			 transDetail.setWaiverPercentage(discount.floatValue());
+				//calculatedTotalAmountPayable = calculatedTotalAmountPayable.add(drugAmountPayable);
 
-			 // Calculate discount amount for THIS drug only
-			 BigDecimal waiverAmountBD = moneyUnitPrice
-			         .multiply(discount)
-			         .divide(new BigDecimal("100"));
+				transDetail.setTotalPrice(moneyUnitPrice);
 
-			 transDetail.setWaiverAmount(waiverAmountBD.floatValue());
+				// individual drug discount
+				transDetail.setWaiverPercentage(discount.floatValue());
+				transDetail.setWaiverAmount(discountAmount.floatValue());
 
-			 // Amount payable for THIS drug
-			 BigDecimal drugAmountPayable = moneyUnitPrice.subtract(waiverAmountBD);
+				// amount payable for this drug
+				transDetail.setAmountPayable(drugAmountPayable);
 
-			 transDetail.setAmountPayable(drugAmountPayable);
+				transDetail.setTotalAmount(totalValue);
 			 
 			 if(amountGiven==null)
 			 {

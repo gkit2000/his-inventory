@@ -34,6 +34,10 @@ var tot=parseFloat(${total});
 jQuery("#totalValue").val("");
 jQuery("#totalValue").val(tot);
 
+var tod=parseFloat(${totalDiscount});
+jQuery("#totalDiscount").val("");
+jQuery("#totalDiscount").val(tod);
+
 var waiverPercentage=parseFloat(${waiverPercentage});
 jQuery("#waiverPercentage").val("");
 jQuery("#waiverPercentage").val(waiverPercentage);
@@ -63,7 +67,8 @@ jQuery("#amtreturnd").hide();
 jQuery("#creditheader").show();
 if(confirm("Are you sure?")){
 	jQuery("#sub").attr("disabled", "disabled");
-	PURCHASE.printDiv();
+	//PURCHASE.printDiv();
+	print();
 	return true;
 	}
 }
@@ -140,8 +145,46 @@ jQuery("#bttprocess").attr("disabled", "disabled");
 
 jQuery("#cashheader").show();
                
-ISSUE.processSlip('0');
+//ISSUE.processSlip('0');
+print();
 }
+
+function print(){
+		  	var totalValue=jQuery("#totalValue").val();
+			var totalDiscount=jQuery("#totalDiscount").val();
+			var totalAmountPayable=jQuery("#totalAmountPayable").val();
+			var waiverComment=jQuery("#waiverComment").val();
+			var amountGiven=jQuery("#amountGiven").val();
+			var amountReturned=jQuery("#amountReturned").val();
+			jQuery("#printableTotal").empty();
+			jQuery("#printableDiscountComment").empty();
+			jQuery("#printableTotalAmountPayable").empty();
+			jQuery("#printableTotalPayable").empty();
+			jQuery("#printableGiven").empty();
+			jQuery("#printableAmountReturned").empty();
+		    jQuery("#printableTotal").append("<span style='margin:5px;'>" + totalValue + "</span>");
+			jQuery("#printableDiscountAmount").append("<span style='margin:5px;'>" + totalDiscount + "</span>");
+			jQuery("#printableDiscountComment").append("<span style='margin:5px;'>" + waiverComment + "</span>");
+		    jQuery("#printableTotalAmountPayable").append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
+		    jQuery("#printableTotalPayable").append("<span style='margin:5px;'>" + toWords(totalAmountPayable) + "</span>");
+		    jQuery("#printableGiven").append("<span style='margin:5px;'>" + amountGiven + "</span>");
+		    jQuery("#printableAmountReturned").append("<span style='margin:5px;'>" + amountReturned + "</span>");
+		  	jQuery("div#printDiv").printArea({mode:"popup",popClose:true,popTitle: "Support by HISP india(hispindia.org)"});
+		  	//ISSUE.processSlip('0');
+					jQuery("#bttprocess").val("Wait a moment!");
+					jQuery("#bttprocess").attr("disabled","disabled");
+					jQuery("#bttclear").attr("disabled","disabled");
+					jQuery("#bttprint").attr("disabled","disabled");
+					var totalValue=jQuery("#totalValue").val();
+					var waiverPercentage=0;
+					var totalAmountPayable=jQuery("#totalAmountPayable").val();
+					var waiverComment=jQuery("#waiverComment").val();
+					var amountGiven=jQuery("#amountGiven").val();
+					var amountReturned=jQuery("#amountReturned").val();
+					var data = 0;
+					alert(totalAmountPayable);
+					ACT.go("processIssueDrug.form?totalValue="+totalValue+"&waiverPercentage="+waiverPercentage+"&totalAmountPayable="+totalAmountPayable+"&waiverComment="+waiverComment+"&amountGiven="+amountGiven+"&amountReturned="+amountReturned+"&action="+data);
+		}
 </script>
 
 <script type="text/javascript">
@@ -366,8 +409,10 @@ function calculateTotalDiscount() {
 				<th><spring:message code="inventory.drug.formulation" /></th>
 				<th><spring:message code="inventory.receiptDrug.quantity" /></th>
 				<th><spring:message code="inventory.receiptDrug.MRP" /></th>
+				<th>Total</th>
 				<th>Discount %</th>
-                <th>Total</th>
+				<th>Discount</th>
+                <th>Total after Discount</th>
 			</tr>
 			<c:choose>
 				<c:when test="${not empty listPatientDetail}">
@@ -381,11 +426,13 @@ function calculateTotalDiscount() {
 							<td>${issue.transactionDetail.formulation.name}-${issue.transactionDetail.formulation.dozage}</td>
 							<td>${issue.quantity}</td>
 							<td>${issue.transactionDetail.mrpPrice}</td>
+							<td>${issue.transactionDetail.mrpPrice * issue.quantity}</td>
 							<td>
     <span class="rowDiscount">
         ${issue.discountPercent != null ? issue.discountPercent : 0}
     </span> %
 </td>
+                            <td>${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
                             <td>
                             <span class="rowTotal">
                             ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
@@ -406,7 +453,12 @@ function calculateTotalDiscount() {
 				size="11" value="0" readOnly="true"/></td>
 		</tr>
 		<tr>
-		<td>Total amount payable</td>
+		<td>Total Discount</td>
+		<td><input type="text" id="totalDiscount" name="totalDiscount"
+				size="11" value="0" readOnly="true"/></td>
+		</tr>
+		<tr>
+		<td>Total Amount Payable after discount</td>
 		<td><input type="text" id="totalAmountPayable" name="totalAmountPayable"
 				size="11" value="0" readOnly="true"/></td>
 		</tr>
@@ -432,13 +484,13 @@ function calculateTotalDiscount() {
 			<tr>
 				<td><c:if
 						test="${not empty listPatientDetail && not empty issueDrugPatient}">
-						<input type="button"
+						<input type="submit"
 							class="ui-button ui-widget ui-state-default ui-corner-all"
 							id="bttprocess" name="bttprocess" value="<spring:message code="inventory.finish"/>"
-							onclick="finishDrugOrder();" />
+							onclick="return finishDrugOrder();" />
 							<input type="submit" id="sub" name="sub"
 							class="ui-button ui-widget ui-state-default ui-corner-all"
-				value="<spring:message code='inventory.drug.process.credit'/>"  onClick="credit();" />
+				value="<spring:message code='inventory.drug.process.credit'/>"  onClick="return credit();" />
 						<input type="button"
 							class="ui-button ui-widget ui-state-default ui-corner-all"
 							id="bttprint" name="bttprint" value="<spring:message code="inventory.print"/>"
@@ -538,7 +590,10 @@ function calculateTotalDiscount() {
                 <th style="text-align: center;"><spring:message code="inventory.receiptDrug.dateExpiry" /></th>
 				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.quantity" /></th>
 				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.MRP" /></th>
-				<th style="text-align: center;"><spring:message code="inventory.receiptDrug.total" /></th>
+				<th style="text-align: center;">Total</th>
+				<th style="text-align: center;">Discount %</th>
+				<th style="text-align: center;">Discount</th>
+                <th style="text-align: center;">Total after Discount</th>
 			</tr>
 			</thead>
 			<tbody>
@@ -558,6 +613,17 @@ function calculateTotalDiscount() {
 							<td style="text-align: center;">${issue.quantity}</td>
 							<td style="text-align: center;">${issue.transactionDetail.mrpPrice}</td>
 							<td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
+							<td style="text-align: center;">
+    <span class="rowDiscount">
+        ${issue.discountPercent != null ? issue.discountPercent : 0}
+    </span> %
+</td>
+                            <td style="text-align: center;">${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
+                            <td style="text-align: center;">
+                            <span class="rowTotal">
+                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                            </span>
+                         </td>
 						</tr>
 					</c:forEach>
 				</c:when>
@@ -572,17 +638,6 @@ function calculateTotalDiscount() {
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">Total amount</td>
 <td style="text-align: center;"><span id="printableTotal" /></td>
-</tr>
-<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Discount %</td>
-<td style="text-align: center;"><span id="printableDiscount" /></td>
 </tr>
 <tr>
 	<td style="text-align: center;">&nbsp;</td>

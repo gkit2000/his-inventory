@@ -3751,6 +3751,9 @@ return (int) detail.getClosingBalance();
 		criteria.add(Restrictions.eq("encounter.encounterId", encounterId));
 		criteria.add(Restrictions.eq("inventoryDrug.id", inventoryDrugId));
 		criteria.add(Restrictions.eq("inventoryDrugFormulation.id", formulationId));
+		
+		criteria.addOrder(Order.desc("createdOn"));
+		criteria.setMaxResults(1);
 
 		return (OpdDrugOrder) criteria.uniqueResult();
 	}
