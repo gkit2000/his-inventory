@@ -74,6 +74,7 @@
 
 
 <script type="text/javascript">
+var isCredit = false;
 jQuery(document).ready(function(){ jQuery("#creditheader").hide();
 jQuery("#cashheader").hide();
 //jQuery("#headerValue").hide();
@@ -146,6 +147,10 @@ function issueDrugOrder(listOfDrugQuantity) {
   //jQuery("#total"+drugId).append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
   
   	totalValue = (totalValue + price*quant);
+  	
+  	var total = parseFloat(price) * parseFloat(quant);
+    var discountt=0;
+    var totalAfterDiscount = total;
  
    if (preTotal != null){
 		totalValue = +totalValue + +preTotal.value;
@@ -161,7 +166,10 @@ function issueDrugOrder(listOfDrugQuantity) {
 	       	 +"<input id='"+avaiableId+"_fdateexpiry'  name='"+avaiableId+"_fdateexpiry' type='hidden'  size='11' value='"+expire+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fQuantity'  name='"+avaiableId+"_fQuantity' type='text' size='3' value='"+quant+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fPrice'  name='"+avaiableId+"_fPrice' type='text' size='3' type='hidden' value='"+price+"'  readonly='readonly'/>&nbsp;"
+	       	 +"<input id='"+avaiableId+"_fTotal'  name='"+avaiableId+"_fTotal' type='text' size='3' value='"+total+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input type='text' " +"id='"+avaiableId+"_fdiscount' " +"name='"+avaiableId+"_fdiscount' " +"value='0' size='6' " +"onkeyup='calculateDrugDiscount("+avaiableId+");' /> %"
+	       	 +"<input id='"+avaiableId+"_fDiscountt'  name='"+avaiableId+"_fDiscountt' type='text' size='4' value='"+discountt+"'  readonly='readonly'/>&nbsp;"
+	       	 +"<input id='"+avaiableId+"_fTotalAfterDiscount'  name='"+avaiableId+"_fTotalAfterDiscount' type='text' size='12' value='"+totalAfterDiscount+"'  readonly='readonly'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fFormulationId'  name='"+avaiableId+"_fFormulationId' type='hidden' value='"+formulationId+"'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fAvaiableId'  name='avaiableId' type='hidden' value='"+avaiableId+"'/>&nbsp;"
 	       	 +"<input id='"+avaiableId+"_fFrequencyName'  name='"+avaiableId+"_fFrequencyName' type='hidden' value='"+frequencyName+"'/>&nbsp;"
@@ -234,8 +242,13 @@ function issueDrugOrder(listOfDrugQuantity) {
 				 +price
 				 +"</td>"
 				 +"<td>"
-				 +totalPrice
-				 +"</td>";
+				 +total
+				 +"</td>"
+				 + "<td id='" + avaiableId + "_printDiscountPercent'>0</td>"
+                 + "<td id='" + avaiableId + "_printDiscount'>0</td>"
+                 + "<td id='" + avaiableId + "_printTotalAfterDiscount'>"
+                 + totalAfterDiscount.toFixed(3)
+                 + "</td>";
    
    var newElementt = document.createElement('tr');
    newElementt.setAttribute("align", "center");   
@@ -279,7 +292,7 @@ jQuery("#processDrugOrder").hide();
 </script>
 
 <script type="text/javascript">
-function finishDrugOrder() {
+function finishDrugOrder(isCreditOrder) {
 
     var drugProcessName = document.getElementById("drugProcessName");
 
@@ -321,8 +334,22 @@ function finishDrugOrder() {
     }
     */
 
-    // 3. Amount Given validation
-    if (document.getElementById("amountGiven").disabled != true) {
+    // 3. Credit / Cash handling
+    if (isCreditOrder) {
+
+        // CREDIT
+        isCredit = true;
+
+        jQuery("#amountGiven").val("");
+        jQuery("#amountReturned").val("");
+
+        jQuery("#amountGiven").attr("disabled", "disabled");
+        jQuery("#amountReturned").attr("disabled", "disabled");
+
+    } else {
+
+        // CASH
+        isCredit = false;
 
         if (jQuery("#amountGiven").val() == "") {
             alert("Please enter Amount Given");
@@ -336,13 +363,13 @@ function finishDrugOrder() {
             return false;
         }
 
-        var amgiv = jQuery("#amountGiven").val();
-        var tamp = jQuery("#totalAmountPayable").val();
+       var amgiv = parseFloat(jQuery("#amountGiven").val()) || 0;
+       var tamp = parseFloat(jQuery("#totalAmountPayablee").val()) || 0;
 
-        if (parseFloat(amgiv) - parseFloat(tamp) < 0) {
-            alert("Amount Given must be greater than Total Amount Payable");
-            return false;
-        }
+       if (amgiv < tamp) {
+          alert("Amount Given must be greater than or equal to Total Amount Payable");
+          return false;
+       }
 
         if (jQuery("#amountReturned").val() == "") {
             alert("Please enter Amount Returned");
@@ -358,17 +385,23 @@ function finishDrugOrder() {
     }
 
     // 4. Confirmation
-    if (confirm("Are you sure?")) {
-
-        jQuery("#subm").attr("disabled", "disabled");
-
-        printDiv2();
-
-        return true;
+    if (!confirm("Are you sure?")) {
+        return false;
     }
+    
+    //Disable button so user cannot click twice
+    jQuery("#subm").attr("disabled", "disabled");
+    
+    //Print first
+    printDiv2();
+
+    // Submit AFTER print window is opened
+    setTimeout(function () {
+        document.getElementById("finishDrugOrderForm").submit();
+    }, 500);
 
     return false;
-}
+  }
 
 function calculateAllDrugDiscounts() {
 
@@ -407,6 +440,8 @@ function calculateAllDrugDiscounts() {
 
 function calculateDrugDiscount(avaiableId) {
 
+    var totalBeforeDiscount = 0;
+    var totalDiscount = 0;
     var totalPayable = 0;
 
     // Get all dynamically created discount fields
@@ -454,13 +489,36 @@ function calculateDrugDiscount(avaiableId) {
         }
 
         var drugTotal = qty * price;
+        
+        totalBeforeDiscount += drugTotal;
 
         var discountAmount = drugTotal * discount / 100;
+        
+        totalDiscount += discountAmount;
+        
+        // Total after discount for this drug
+        var drugAfterDiscount = drugTotal - discountAmount;
+        
+        // Update Discount Amount field
+        jQuery("#" + id + "_fDiscountt").val(discountAmount);
+
+        // Update Total After Discount field
+        jQuery("#" + id + "_fTotalAfterDiscount").val(drugAfterDiscount.toFixed(3));
+        
+        jQuery("#" + id + "_printDiscountPercent").text(discount);
+        jQuery("#" + id + "_printDiscount").text(discountAmount.toFixed(3));
+        jQuery("#" + id + "_printTotalAfterDiscount").text(drugAfterDiscount.toFixed(3));
 
         var drugPayable = drugTotal - discountAmount;
 
-        totalPayable = totalPayable + drugPayable;
+        //totalPayable = totalPayable + drugPayable;
     }
+    
+    totalPayable = totalBeforeDiscount-totalDiscount;
+    
+    jQuery("#totalValue").val(totalBeforeDiscount.toFixed(3));
+    
+    jQuery("#totalDiscount").val(totalDiscount);
 
     jQuery("#totalAmountPayablee").val(Math.round(totalPayable));
 	amountReturnedToPatient();
@@ -591,10 +649,13 @@ function amountReturnedToPatient() {
 		action="drugorder.form?patientId=${patientId}&encounterId=${encounterId}&patientType=${patientType}"
 		method="POST" onsubmit="javascript:return finishDrugOrder();">
 		<div>
-			<input type="submit" id="subm" name="subm"
-				value="<spring:message code='inventory.drug.process.finish'/>" />
-				<input type="submit" id="sub" name="sub"
-				value="<spring:message code='inventory.drug.process.credit'/>"  onClick="credit();" />
+			<input type="button" id="subm" name="subm"
+    value="<spring:message code='inventory.drug.process.finish'/>"
+    onclick="finishDrugOrder(false);" />
+
+<input type="button" id="sub" name="sub"
+    value="<spring:message code='inventory.drug.process.credit'/>"
+    onclick="finishDrugOrder(true);" />
 				 <input
 				type="button" value="<spring:message code='general.cancel'/>"
 				onclick="javascript:window.location.href='patientQueueDrugOrder.form'" />
@@ -621,10 +682,23 @@ function amountReturnedToPatient() {
 			<input type='text' size="11" value='Formulation' readonly="readonly" />
 			<input type='text' size="3" value='Qty' readonly="readonly" />
 			<input type='text' size="3" value='MRP' readonly="readonly" />
-			<input type="text" size="6" value="Discount %" readonly="readonly" />
+			<input type='text' size="4" value='Total' readonly="readonly" />
+			<input type="text" size="7" value="Discount %" readonly="readonly" />
+			<input type='text' size="4" value='Discount' readonly="readonly" />
+			<input type='text' size="14" value='Total after Discount' readonly="readonly" />
 			<hr />	
 			</div>
 			
+		<div>
+		Total&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<input type="text" id="totalValue" name="totalValue"
+				size="11" value="0" readOnly="true"/>
+		</div>
+		<div>
+		Total Discount&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+				<input type="text" id="totalDiscount" name="totalDiscount"
+				size="11" value="0" readOnly="true"/>
+		</div>
 		<div>
 		Total amount payable&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
 				<input type="text" id="totalAmountPayablee" name="totalAmountPayablee"
@@ -729,6 +803,9 @@ function amountReturnedToPatient() {
 <th style="text-align: center;">Qty</th>
 <th style="text-align: center;">MRP</th>
 <th style="text-align: center;">Total</th>
+<th style="text-align: center;">Discount %</th>
+<th style="text-align: center;">Discount</th>
+<th style="text-align: center;">Total after Discount</th>
 </tr>
 </thead>
 <tbody id="drugIssuedheaderValue">
@@ -745,19 +822,11 @@ function amountReturnedToPatient() {
 <td style="text-align: center;"><span id="printableTotal" /></td>
 </tr>
 <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Discount %</td>
-<td style="text-align: center;"><span id="printableDiscount" /></td>
-</tr>
-<tr>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
 	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">DiscountAmount</td>
+	<td style="text-align: center;">Discount Amount</td>
 	<td style="text-align: center;"><span id="printableDiscountAmount" /></td>
 </tr>
 <tr>
@@ -855,60 +924,165 @@ function amountReturnedToPatient() {
 		alert("Printing ...");
 		//setTimeout(function(){window.location.href = $("#contextPath").val()+"/getBill.list"}, 1000);	
 	}
-	function credit()
-	{  
-	
-	jQuery("#amountGiven").val("");
-	jQuery("#amountReturned").val("");
-	jQuery("#amountGiven").attr("disabled", "disabled");
-	jQuery("#amountReturned").attr("disabled", "disabled");
-	jQuery("#amtgiven").hide();
-	jQuery("#amtreturned").hide();
-	jQuery("#amtgivn").hide();
-	jQuery("#amtreturnd").hide();
-	jQuery("#creditheader").show();
-		
-	}
+	function credit() {
+
+    isCredit = true;
+    // Clear cash payment fields
+    jQuery("#amountGiven").val("");
+    jQuery("#amountReturned").val("");
+
+    // Disable cash payment fields
+    jQuery("#amountGiven").attr("disabled", "disabled");
+    jQuery("#amountReturned").attr("disabled", "disabled");
+
+    // Hide cash payment fields in print
+    jQuery("#amtgiven").hide();
+    jQuery("#amtreturned").hide();
+    jQuery("#amtgivn").hide();
+    jQuery("#amtreturnd").hide();
+
+    // Show CREDIT bill
+    jQuery("#creditheader").show();
+
+    // Hide CASH bill
+    jQuery("#cashheader").hide();
+}
 	function printDiv2() {
 
-		var totalValue=jQuery("#totalValue").val();
-		var waiverPercentage=jQuery("#waiverPercentage").val();
-		var waiverAmount=(totalValue*waiverPercentage)/100;
-		var totalAmountPayable=jQuery("#totalAmountPayable").val();
-		var waiverComment=jQuery("#waiverComment").val();
-		var amountGiven=jQuery("#amountGiven").val();
-		var amountReturned=jQuery("#amountReturned").val();
-		jQuery("#printableTotal").empty();
-		jQuery("#printableDiscount").empty();
-		jQuery("#printableDiscountAmount").empty();
-		jQuery("printableDiscountComment").empty();
-		jQuery("#printableTotalAmountPayable").empty();
-		jQuery("#printableTotalPayable").empty();
-		jQuery("#printableGiven").empty();
-		jQuery("#printableAmountReturned").empty();
-		if(jQuery("#amountGiven").val()!=""){
-		jQuery("#cashheader").show();
-		}
-		else{
-		jQuery("#cashheader").hide();
-		}
-		jQuery("#printableTotal").append("<span style='margin:5px;'>" + totalValue + "</span>");
-		jQuery("#printableDiscount").append("<span style='margin:5px;'>" + waiverPercentage + "</span>");
-		jQuery("#printableDiscountAmount").append("<span style='margin:5px;'>" + waiverAmount + "</span>");
-		jQuery("#printableDiscountComment").append("<span style='margin:5px;'>" + waiverComment + "</span>");
-		jQuery("#printableTotalAmountPayable").append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
-		jQuery("#printableTotalPayable").append("<span style='margin:5px;'>" + toWords(totalAmountPayable) + "</span>");
-		//jQuery("#printableGiven").append("<span style='margin:5px;'>" + amountGiven + "</span>");
-		//jQuery("#printableAmountReturned").append("<span style='margin:5px;'>" + amountReturned + "</span>");
-		
-		var printer = window.open('', '', 'width=300,height=300');
-		printer.document.open("text/html");
-		printer.document.write(document.getElementById('printDiv').innerHTML);
-		printer.print();
-		printer.document.close();
-		printer.window.close();
-		//alert("Printing ...");
-	}
+    // ==========================================
+    // 1. Get overall values
+    // ==========================================
+
+    var totalValue = parseFloat(jQuery("#totalValue").val()) || 0;
+
+    var totalDiscount = parseFloat(jQuery("#totalDiscount").val()) || 0;
+
+    var totalAmountPayable =
+        parseFloat(jQuery("#totalAmountPayablee").val()) || 0;
+
+    var waiverComment = jQuery("#waiverComment").val() || "";
+
+    var amountGiven = jQuery("#amountGiven").val() || "";
+    var amountReturned = jQuery("#amountReturned").val() || "";
+
+
+    // ==========================================
+    // 2. Clear old printable values
+    // ==========================================
+
+    jQuery("#printableTotal").empty();
+    jQuery("#printableDiscount").empty();
+    jQuery("#printableDiscountAmount").empty();
+    jQuery("#printableDiscountComment").empty();
+    jQuery("#printableTotalAmountPayable").empty();
+    jQuery("#printableTotalPayable").empty();
+    jQuery("#printableGiven").empty();
+    jQuery("#printableAmountReturned").empty();
+
+
+    // ==========================================
+    // 3. Cash / Credit header
+    // ==========================================
+
+   if (isCredit) {
+    jQuery("#creditheader").show();
+    jQuery("#cashheader").hide();
+} else {
+    jQuery("#creditheader").hide();
+    jQuery("#cashheader").show();
+}
+
+
+    // ==========================================
+    // 4. Put values into print section
+    // ==========================================
+
+    jQuery("#printableTotal").text(totalValue);
+
+    // This is total discount amount
+    jQuery("#printableDiscountAmount").text(totalDiscount);
+
+
+    jQuery("#printableDiscountComment").text(
+        waiverComment
+    );
+
+    jQuery("#printableTotalAmountPayable").text(
+        Math.round(totalAmountPayable)
+    );
+
+    jQuery("#printableTotalPayable").text(
+         toWords(String(Math.round(totalAmountPayable)))
+    );
+
+
+    // ==========================================
+    // 5. Amount given / returned
+    // ==========================================
+
+    if (amountGiven != "") {
+
+        jQuery("#printableGiven").text(
+            amountGiven
+        );
+
+        jQuery("#printableAmountReturned").text(
+            amountReturned
+        );
+    }
+
+
+    // ==========================================
+    // 6. Open print window
+    // ==========================================
+
+    var printContents =
+        document.getElementById("printDiv").innerHTML;
+
+    var printer = window.open(
+        "",
+        "",
+        "width=800,height=600"
+    );
+
+    if (!printer) {
+        alert("Please allow pop-ups to print the bill.");
+        return false;
+    }
+
+    printer.document.open();
+
+    printer.document.write(
+        "<html>" +
+        "<head>" +
+        "<title>Bill</title>" +
+
+        "<style>" +
+        "body { font-family: Arial, Helvetica, sans-serif; font-size: 12px; }" +
+        "table { border-collapse: collapse; }" +
+        "th, td { padding: 4px; }" +
+        "</style>" +
+
+        "</head>" +
+        "<body>" +
+
+        printContents +
+
+        "</body>" +
+        "</html>"
+    );
+
+    printer.document.close();
+
+    // Wait until print document is loaded
+    printer.onload = function() {
+        printer.focus();
+        printer.print();
+        printer.close();
+    };
+
+    return true;
+}
 
 </script>
 

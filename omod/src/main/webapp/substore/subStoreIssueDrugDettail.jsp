@@ -167,87 +167,39 @@ jQuery("#cashheaders").show();
 					</c:forEach>
 				</c:when>
 			</c:choose>
+			 <!-- EMPTY SPACE AFTER ITEMS -->
+        <tr>
+            <td colspan="11" style="height:20px;">
+                &nbsp;
+            </td>
+        </tr>
 			<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
+<td colspan="7" style="text-align: center;">Total amount</td>
+<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
+</tr>
+<tr>
+	<td colspan="7" style="text-align: center;">DiscountAmount</td>
+	<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
+</tr>
+<tr>
 <!--
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
-<td colspan="10" style="text-align: center;">Total amount</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
+<td colspan="7" style="text-align: center;">Total amount payable</td>
+<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
 </tr>
 <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
 <!--
 <td style="text-align: center;">&nbsp;</td>
 <td style="text-align: center;">&nbsp;</td>
  -->
+<td id="amtgven" colspan="7" style="text-align: center;">Amount Given</td>
+<td id="amtgiven" colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountGiven}.00</td>
 </tr>
 <tr>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<!--
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	 -->
-	<td colspan="10" style="text-align: center;">DiscountAmount</td>
-	<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
-</tr>
-<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<!--
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
- -->
-<td colspan="10" style="text-align: center;">Total amount payable</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
-</tr>
-<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<!--
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
- -->
-<td id="amtgven" colspan="10" style="text-align: center;">Amount Given</td>
-<td id="amtgiven" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountGiven}.00</td>
-</tr>
-<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<!--
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
- -->
-<td id="amtretrn" colspan="10" style="text-align: center;">Amount Returned</td>
-<td id="amtreturn" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountReturned}.00</td>
+<td id="amtretrn" colspan="7" style="text-align: center;">Amount Returned</td>
+<td id="amtreturn" colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountReturned}.00</td>
 </tr>
 <tr>
 	<td colspan="8" class='<c:if test="${voided==1}">retired</c:if>'><b>Comment: </b>${discountComment}</td>
@@ -364,7 +316,7 @@ jQuery("#cashheaders").show();
 								type="textbox" /></td>
 							<td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.quantity}</td>
 							<td style="text-align: center;">${issue.transactionDetail.mrpPrice}</td>
-							 <td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
+							 <td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 							<td style="text-align: center;">
     <span class="rowDiscount">
         ${issue.discountPercent != null ? issue.discountPercent : 0}
@@ -376,41 +328,28 @@ jQuery("#cashheaders").show();
                             ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
                             </span>
                          </td>
-							<td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 						    <input type="hidden" id="test1" value="${issue.transactionDetail.amountCredit}"/>
 						</tr>
 					</c:forEach>
 				</c:when>
 			</c:choose>
+			 <!-- EMPTY SPACE AFTER ITEMS -->
+        <tr>
+            <td colspan="11" style="height:20px;">
+                &nbsp;
+            </td>
+        </tr>
 			<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td colspan="10" style="text-align: center;">Total amount</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
+<td colspan="7" style="text-align: center;">Total amount</td>
+<td  colspan="2" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
 </tr>
 <tr>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td colspan="10" style="text-align: center;">DiscountAmount</td>
-	<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
+	<td colspan="7" style="text-align: center;">DiscountAmount</td>
+	<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
 </tr>
 <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td colspan="10" style="text-align: center;">Total amount payable</td>
-<td  style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
+<td colspan="7" style="text-align: center;">Total amount payable</td>
+<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
 </tr>
 <tr>
 	<td colspan="6" class='<c:if test="${voided==1}">retired</c:if>'><b>Comment: </b>${discountComment}</td>

@@ -182,7 +182,6 @@ function print(){
 					var amountGiven=jQuery("#amountGiven").val();
 					var amountReturned=jQuery("#amountReturned").val();
 					var data = 0;
-					alert(totalAmountPayable);
 					ACT.go("processIssueDrug.form?totalValue="+totalValue+"&waiverPercentage="+waiverPercentage+"&totalAmountPayable="+totalAmountPayable+"&waiverComment="+waiverComment+"&amountGiven="+amountGiven+"&amountReturned="+amountReturned+"&action="+data);
 		}
 </script>
@@ -629,37 +628,36 @@ function calculateTotalDiscount() {
 				</c:when>
 			</c:choose>
 			<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Total amount</td>
-<td style="text-align: center;"><span id="printableTotal" /></td>
+    <td colspan="12">&nbsp;</td>
 </tr>
-<tr>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">&nbsp;</td>
-	<td style="text-align: center;">DiscountAmount</td>
-	<td style="text-align: center;"><span id="printableDiscountAmount" /></td>
+			<tr>
+    <td colspan="7">&nbsp;</td>
+    <td colspan="3">
+        Total amount
+    </td>
+    <td colspan="2">
+        <span id="printableTotal"></span>
+    </td>
 </tr>
+
 <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">Total amount payable</td>
-<td style="text-align: center;"><span id="printableTotalAmountPayable" /></td>
+    <td colspan="7">&nbsp;</td>
+    <td colspan="3">
+        Discount Amount
+    </td>
+    <td colspan="2">
+        <span id="printableDiscountAmount"></span>
+    </td>
+</tr>
+
+<tr>
+    <td colspan="7">&nbsp;</td>
+    <td colspan="3">
+        Total amount payable
+    </td>
+    <td colspan="2">
+        <span id="printableTotalAmountPayable"></span>
+    </td>
 </tr>
 <!--  
 <tr>
