@@ -34,7 +34,7 @@ var tot=parseFloat(${total});
 jQuery("#totalValue").val("");
 jQuery("#totalValue").val(tot);
 
-var tod=parseFloat(${totalDiscount});
+var tod = parseFloat(${totalDiscount}).toFixed(2);
 jQuery("#totalDiscount").val("");
 jQuery("#totalDiscount").val(tod);
 

@@ -167,7 +167,6 @@ public class DrugOrderController {
 			@RequestParam(value = "patientType", required = false) String patientType,
 			@RequestParam(value="avaiableId",required=false) String[] avaiableId,
 			@RequestParam(value = "totalValue", required = false) Float totalValue,
-			@RequestParam(value = "waiverPercentage", required = false) Float waiverPercentage,
             @RequestParam(value= "waiverComment", required = false) String waiverComment,
 			@RequestParam(value = "totalAmountPayablee", required = false) BigDecimal totalAmountPayablee,
 			@RequestParam(value = "amountGiven", required = false) Integer amountGiven,

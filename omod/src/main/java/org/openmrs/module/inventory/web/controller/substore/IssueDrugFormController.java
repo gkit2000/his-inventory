@@ -220,7 +220,6 @@ public class IssueDrugFormController {
 			        .get("issueDrug_" + userId);
 			model.addAttribute("issueDrugPatient", issueDrugPatient);
 			model.addAttribute("listPatientDetail", list);
-			System.out.println("eeeeeeeeeeeeeeee");
 			return "/module/inventory/substore/subStoreIssueDrugForm";
 		}
 		
@@ -267,7 +266,6 @@ public class IssueDrugFormController {
 			        .get("issueDrug_" + userId);
 			model.addAttribute("issueDrugPatient", issueDrugPatient);
 			model.addAttribute("listPatientDetail", list);
-			System.out.println("fffffffffffffff");
 			return "/module/inventory/substore/subStoreIssueDrugForm";
 		}
 		

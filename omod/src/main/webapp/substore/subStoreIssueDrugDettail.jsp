@@ -147,13 +147,13 @@ jQuery("#cashheaders").show();
 						    <td style="text-align: center;">${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 							<td style="text-align: center;">
     <span class="rowDiscount">
-        ${issue.discountPercent != null ? issue.discountPercent : 0}
+        ${issue.transactionDetail.waiverPercentage != null ? issue.transactionDetail.waiverPercentage : 0}
     </span> %
 </td>
-                            <td style="text-align: center;">${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
+                            <td style="text-align: center;">${issue.transactionDetail.waiverAmount}</td>
                             <td style="text-align: center;">
                             <span class="rowTotal">
-                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                            ${ (issue.transactionDetail.mrpPrice * issue.transactionDetail.issueQuantity) - ((issue.transactionDetail.mrpPrice *issue.transactionDetail.issueQuantity * issue.transactionDetail.waiverPercentage)/100) }
                             </span>
                          </td>
 						   <!--
@@ -173,36 +173,75 @@ jQuery("#cashheaders").show();
                 &nbsp;
             </td>
         </tr>
-			<tr>
-<td colspan="7" style="text-align: center;">Total amount</td>
-<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
-</tr>
+		<!-- =========================
+     UI BILL SUMMARY - RIGHT SIDE
+     ========================= -->
+
 <tr>
-	<td colspan="7" style="text-align: center;">DiscountAmount</td>
-	<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
+    <td colspan="11" style="padding:0;">
+
+        <table style="width:320px; margin-left:auto; margin-right:0; border-collapse:collapse;">
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    Total amount
+                </td>
+                <td style="text-align:right; padding:3px 5px; width:80px;">
+                    ${totalAmount}0
+                </td>
+            </tr>
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    Discount Amount
+                </td>
+                <td style="text-align:right; padding:3px 5px;">
+                    ${discountAmount}
+                </td>
+            </tr>
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    <b>Total amount payable</b>
+                </td>
+                <td style="text-align:right; padding:3px 5px;">
+                    <b>${totalAmountPayable}</b>
+                </td>
+            </tr>
+
+            <tr>
+                <td id="amtgven"
+                    style="text-align:right; padding:3px 10px;">
+                    Amount Given
+                </td>
+
+                <td id="amtgiven"
+                    style="text-align:right; padding:3px 5px;">
+                    ${amountGiven}.00
+                </td>
+            </tr>
+
+            <tr>
+                <td id="amtretrn"
+                    style="text-align:right; padding:3px 10px;">
+                    Amount Returned
+                </td>
+
+                <td id="amtreturn"
+                    style="text-align:right; padding:3px 5px;">
+                    ${amountReturned}.00
+                </td>
+            </tr>
+
+        </table>
+
+    </td>
 </tr>
+
 <tr>
-<!--
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
- -->
-<td colspan="7" style="text-align: center;">Total amount payable</td>
-<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
-</tr>
-<tr>
-<!--
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
- -->
-<td id="amtgven" colspan="7" style="text-align: center;">Amount Given</td>
-<td id="amtgiven" colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountGiven}.00</td>
-</tr>
-<tr>
-<td id="amtretrn" colspan="7" style="text-align: center;">Amount Returned</td>
-<td id="amtreturn" colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${amountReturned}.00</td>
-</tr>
-<tr>
-	<td colspan="8" class='<c:if test="${voided==1}">retired</c:if>'><b>Comment: </b>${discountComment}</td>
+    <td colspan="11">
+        <b>Comment:</b> ${discountComment}
+    </td>
 </tr>
 			</tbody>
 		</table>
@@ -319,13 +358,13 @@ jQuery("#cashheaders").show();
 							 <td style="text-align: center;" class='<c:if test="${issue.transactionDetail.voided==1}">retired</c:if>'>${issue.transactionDetail.mrpPrice*issue.quantity}</td>
 							<td style="text-align: center;">
     <span class="rowDiscount">
-        ${issue.discountPercent != null ? issue.discountPercent : 0}
+        ${issue.transactionDetail.waiverPercentage != null ? issue.transactionDetail.waiverPercentage : 0}
     </span> %
 </td>
-                            <td style="text-align: center;">${ (issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100 }</td>
+                            <td style="text-align: center;">${issue.transactionDetail.waiverAmount}</td>
                             <td style="text-align: center;">
                             <span class="rowTotal">
-                            ${ (issue.transactionDetail.mrpPrice * issue.quantity) - ((issue.transactionDetail.mrpPrice * issue.quantity * issue.discountPercent)/100) }
+                             ${ (issue.transactionDetail.mrpPrice * issue.transactionDetail.issueQuantity) - ((issue.transactionDetail.mrpPrice *issue.transactionDetail.issueQuantity * issue.transactionDetail.waiverPercentage)/100) }
                             </span>
                          </td>
 						    <input type="hidden" id="test1" value="${issue.transactionDetail.amountCredit}"/>
@@ -339,46 +378,60 @@ jQuery("#cashheaders").show();
                 &nbsp;
             </td>
         </tr>
-			<tr>
-<td colspan="7" style="text-align: center;">Total amount</td>
-<td  colspan="2" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmount}0</td>
-</tr>
+<!-- =========================
+     BILL SUMMARY - RIGHT SIDE
+     ========================= -->
+
 <tr>
-	<td colspan="7" style="text-align: center;">DiscountAmount</td>
-	<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${discountAmount}</td>
+    <td colspan="11" style="padding:0;">
+
+        <table style="width:320px; margin-left:auto; margin-right:0; border-collapse:collapse;">
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    Total amount
+                </td>
+                <td style="text-align:right; padding:3px 5px; width:80px;">
+                    ${totalAmount}0
+                </td>
+            </tr>
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    Discount Amount
+                </td>
+                <td style="text-align:right; padding:3px 5px;">
+                    ${discountAmount}
+                </td>
+            </tr>
+
+            <tr>
+                <td style="text-align:right; padding:3px 10px;">
+                    <b>Total amount payable</b>
+                </td>
+                <td style="text-align:right; padding:3px 5px;">
+                    <b>${totalAmountPayable}</b>
+                </td>
+            </tr>
+
+        </table>
+
+    </td>
 </tr>
+
 <tr>
-<td colspan="7" style="text-align: center;">Total amount payable</td>
-<td  colspan="2" style="text-align: center;" class='<c:if test="${voided==1}">retired</c:if>'>${totalAmountPayable}</td>
+    <td colspan="11" style="padding-top:5px;">
+        <b>Comment:</b> ${discountComment}
+    </td>
 </tr>
+
 <tr>
-	<td colspan="6" class='<c:if test="${voided==1}">retired</c:if>'><b>Comment: </b>${discountComment}</td>
+    <td colspan="11" style="padding-top:5px;">
+        <b>Total Amount Payable Rupees:</b>
+        <span id="printableTotalPayablee"></span>
+        only
+    </td>
 </tr>
-<tr>
-<td colspan="6"><b>Total Amount  Payable Rupees:</b><span id="printableTotalPayablee" > </span> only</td>
-</tr>
-<!--  <tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td id="amtgvens" colspan="10" style="text-align: center;">Amount Given</td>
-<td id="amtgivens" style="text-align: center;">${amountGiven}.00</td>
-</tr>
-<tr>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td style="text-align: center;">&nbsp;</td>
-<td id="amtretrns" colspan="10" style="text-align: center;">Amount Returned</td>
-<td id="amtreturns" style="text-align: center;">${amountReturned}.00</td>
-</tr>-->
 </tbody>
 </table>
 <br/><br/><br/><br/><br/><br/>

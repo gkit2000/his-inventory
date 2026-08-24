@@ -146,15 +146,17 @@ function issueDrugOrder(listOfDrugQuantity) {
    //jQuery("#mrp"+drugId).append("<span style='margin:5px;'>" + waiverPercentage + "</span>");
   //jQuery("#total"+drugId).append("<span style='margin:5px;'>" + totalAmountPayable + "</span>");
   
-  	totalValue = (totalValue + price*quant);
+  	totalValue = parseFloat(totalValue) + (parseFloat(price) * parseFloat(quant));
+    totalValue = parseFloat(totalValue.toFixed(2));
   	
-  	var total = parseFloat(price) * parseFloat(quant);
-    var discountt=0;
-    var totalAfterDiscount = total;
+  	var total = (parseFloat(price) * parseFloat(quant)).toFixed(2);
+    var discountt = 0.00;
+    var totalAfterDiscount = parseFloat(total).toFixed(2);
  
    if (preTotal != null){
-		totalValue = +totalValue + +preTotal.value;
-		preTotal.value = totalValue;
+		totalValue = parseFloat(totalValue) + parseFloat(preTotal.value || 0);
+        totalValue = parseFloat(totalValue.toFixed(2));
+        preTotal.value = totalValue.toFixed(2);
 		}
 
    var avaiableId=availableIdArr[i];
@@ -196,7 +198,7 @@ function issueDrugOrder(listOfDrugQuantity) {
 		var totalText =  "<div id='com_"+avaiableId+"_div'>"
 		  +"<tr>"
 				 +"<td id='"+avaiableId+"_fTotal'  name='"+avaiableId+"_fTotal'><b>Total Price:</b>"
-				 +"<input id='totalValue'  name='totalValue' type='text' size='6' value='"+Math.round(totalValue)+"'  readonly='readonly'/>&nbsp;"
+				 +"<input id='totalValue'  name='totalValue' type='text' size='6' value='"+parseFloat(totalValue).toFixed(2)+"'  readonly='readonly'/>&nbsp;"
 				 +"</td>"
 				 +"</tr>"
 				 +"</div>";  	
@@ -213,11 +215,11 @@ function issueDrugOrder(listOfDrugQuantity) {
 	
 	var total=jQuery("#totalValue").val();
     var waiverPercentage=jQuery("#waiverPercentage").val();
-    var waiverAmount=(total*waiverPercentage)/100;
-    var totalAmountPay=total-(total*waiverPercentage)/100;
-    var tap=Math.round(totalAmountPay);
-    jQuery("#totalAmountPayable").val(tap);
-    
+    var waiverAmount = (parseFloat(total) * parseFloat(waiverPercentage)) / 100;
+    waiverAmount = parseFloat(waiverAmount.toFixed(2));
+    var totalAmountPay = parseFloat(total) - waiverAmount;
+    jQuery("#totalAmountPayable").val(totalAmountPay);
+
     var totalPrice=parseInt(quant)*parseInt(price);
     count++;
     var drugIssuedText = "<td>"
@@ -247,7 +249,7 @@ function issueDrugOrder(listOfDrugQuantity) {
 				 + "<td id='" + avaiableId + "_printDiscountPercent'>0</td>"
                  + "<td id='" + avaiableId + "_printDiscount'>0</td>"
                  + "<td id='" + avaiableId + "_printTotalAfterDiscount'>"
-                 + totalAfterDiscount.toFixed(3)
+                 + parseFloat(totalAfterDiscount).toFixed(2)
                  + "</td>";
    
    var newElementt = document.createElement('tr');
@@ -488,40 +490,76 @@ function calculateDrugDiscount(avaiableId) {
             discountField.val(100);
         }
 
+        // ==========================================
+        // Calculate drug total
+        // ==========================================
+
         var drugTotal = qty * price;
-        
+
         totalBeforeDiscount += drugTotal;
 
+        // ==========================================
+        // Calculate discount
+        // ==========================================
+
         var discountAmount = drugTotal * discount / 100;
-        
+
         totalDiscount += discountAmount;
-        
-        // Total after discount for this drug
+
+        // ==========================================
+        // Total after discount
+        // ==========================================
+
         var drugAfterDiscount = drugTotal - discountAmount;
-        
+
         // Update Discount Amount field
-        jQuery("#" + id + "_fDiscountt").val(discountAmount);
+        jQuery("#" + id + "_fDiscountt").val(
+            discountAmount.toFixed(2)
+        );
 
         // Update Total After Discount field
-        jQuery("#" + id + "_fTotalAfterDiscount").val(drugAfterDiscount.toFixed(3));
-        
-        jQuery("#" + id + "_printDiscountPercent").text(discount);
-        jQuery("#" + id + "_printDiscount").text(discountAmount.toFixed(3));
-        jQuery("#" + id + "_printTotalAfterDiscount").text(drugAfterDiscount.toFixed(3));
+        jQuery("#" + id + "_fTotalAfterDiscount").val(
+            drugAfterDiscount.toFixed(2)
+        );
 
-        var drugPayable = drugTotal - discountAmount;
+        // Printable values
+        jQuery("#" + id + "_printDiscountPercent").text(
+            discount
+        );
 
-        //totalPayable = totalPayable + drugPayable;
+        jQuery("#" + id + "_printDiscount").text(
+            discountAmount.toFixed(2)
+        );
+
+        jQuery("#" + id + "_printTotalAfterDiscount").text(
+            drugAfterDiscount.toFixed(2)
+        );
     }
-    
-    totalPayable = totalBeforeDiscount-totalDiscount;
-    
-    jQuery("#totalValue").val(totalBeforeDiscount.toFixed(3));
-    
-    jQuery("#totalDiscount").val(totalDiscount);
 
-    jQuery("#totalAmountPayablee").val(Math.round(totalPayable));
-	amountReturnedToPatient();
+    // ==========================================
+    // Final totals
+    // ==========================================
+
+    totalPayable = totalBeforeDiscount - totalDiscount;
+
+    // ==========================================
+    // Keep EXACT 2 decimal places
+    // Do NOT use Math.round()
+    // ==========================================
+
+    jQuery("#totalValue").val(
+        totalBeforeDiscount.toFixed(2)
+    );
+
+    jQuery("#totalDiscount").val(
+        totalDiscount.toFixed(2)
+    );
+
+    jQuery("#totalAmountPayablee").val(
+        Math.round(totalPayable)
+    );
+
+    amountReturnedToPatient();
 }
 </script>
 
@@ -947,23 +985,21 @@ function amountReturnedToPatient() {
     // Hide CASH bill
     jQuery("#cashheader").hide();
 }
-	function printDiv2() {
+
+function printDiv2() {
 
     // ==========================================
-    // 1. Get overall values
+    // 1. Get values
     // ==========================================
 
-    var totalValue = parseFloat(jQuery("#totalValue").val()) || 0;
-
-    var totalDiscount = parseFloat(jQuery("#totalDiscount").val()) || 0;
+    var totalValue =
+        parseFloat(jQuery("#totalValue").val()) || 0;
+        
+    var discountAmount =
+        parseFloat(jQuery("#totalDiscount").val()) || 0;
 
     var totalAmountPayable =
         parseFloat(jQuery("#totalAmountPayablee").val()) || 0;
-
-    var waiverComment = jQuery("#waiverComment").val() || "";
-
-    var amountGiven = jQuery("#amountGiven").val() || "";
-    var amountReturned = jQuery("#amountReturned").val() || "";
 
 
     // ==========================================
@@ -971,69 +1007,50 @@ function amountReturnedToPatient() {
     // ==========================================
 
     jQuery("#printableTotal").empty();
-    jQuery("#printableDiscount").empty();
     jQuery("#printableDiscountAmount").empty();
-    jQuery("#printableDiscountComment").empty();
     jQuery("#printableTotalAmountPayable").empty();
     jQuery("#printableTotalPayable").empty();
-    jQuery("#printableGiven").empty();
-    jQuery("#printableAmountReturned").empty();
 
 
     // ==========================================
     // 3. Cash / Credit header
     // ==========================================
 
-   if (isCredit) {
-    jQuery("#creditheader").show();
-    jQuery("#cashheader").hide();
-} else {
-    jQuery("#creditheader").hide();
-    jQuery("#cashheader").show();
-}
-
-
-    // ==========================================
-    // 4. Put values into print section
-    // ==========================================
-
-    jQuery("#printableTotal").text(totalValue);
-
-    // This is total discount amount
-    jQuery("#printableDiscountAmount").text(totalDiscount);
-
-
-    jQuery("#printableDiscountComment").text(
-        waiverComment
-    );
-
-    jQuery("#printableTotalAmountPayable").text(
-        Math.round(totalAmountPayable)
-    );
-
-    jQuery("#printableTotalPayable").text(
-         toWords(String(Math.round(totalAmountPayable)))
-    );
-
-
-    // ==========================================
-    // 5. Amount given / returned
-    // ==========================================
-
-    if (amountGiven != "") {
-
-        jQuery("#printableGiven").text(
-            amountGiven
-        );
-
-        jQuery("#printableAmountReturned").text(
-            amountReturned
-        );
+    if (isCredit) {
+        jQuery("#creditheader").show();
+        jQuery("#cashheader").hide();
+    } else {
+        jQuery("#creditheader").hide();
+        jQuery("#cashheader").show();
     }
 
 
     // ==========================================
-    // 6. Open print window
+    // 4. Put ONLY 2 money values into print
+    // ==========================================
+
+    // 1. Total
+    jQuery("#printableTotal").text(
+        totalValue.toFixed(2)
+    );
+    
+    jQuery("#printableDiscountAmount").text(
+        discountAmount.toFixed(2)
+    );
+
+    // 2. Total Amount Payable
+    jQuery("#printableTotalAmountPayable").text(
+        totalAmountPayable.toFixed(2)
+    );
+
+    // Amount in words
+    jQuery("#printableTotalPayable").text(
+        toWords(String(Math.round(totalAmountPayable)))
+    );
+
+
+    // ==========================================
+    // 5. Open print window
     // ==========================================
 
     var printContents =
@@ -1074,7 +1091,6 @@ function amountReturnedToPatient() {
 
     printer.document.close();
 
-    // Wait until print document is loaded
     printer.onload = function() {
         printer.focus();
         printer.print();
@@ -1083,7 +1099,6 @@ function amountReturnedToPatient() {
 
     return true;
 }
-
 </script>
 
 
